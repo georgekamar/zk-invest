@@ -7,12 +7,16 @@ class Utxo {
   /** Initialize a new UTXO - unspent transaction output or input. Note, a full TX consists of 2/16 inputs and 2 outputs
    *
    * @param {BigNumber | BigInt | number | string} amount UTXO amount
+   * @param {BigNumber | BigInt | number | string} tokenId Token to transact, -1 is default
+   * @param {BigNumber | BigInt | number | string} srcPubKey Source Address, 0x0 is default
    * @param {BigNumber | BigInt | number | string} blinding Blinding factor
    * @param {Keypair} keypair
    * @param {number|null} index UTXO index in the merkle tree
    */
-  constructor({ amount = 0, keypair = new Keypair(), blinding = randomBN(), index = null } = {}) {
+  constructor({ amount = 0, tokenId = -1, srcPubKey = '0000000000000000000000000000000000000000', keypair = new Keypair(), blinding = randomBN(), index = null } = {}) {
     this.amount = BigNumber.from(amount)
+    this.tokenId = BigNumber.from(tokenId)
+    this.srcPubKey = BigNumber.from('0x' + srcPubKey.slice(0, 64))
     this.blinding = BigNumber.from(blinding)
     this.keypair = keypair
     this.index = index
@@ -25,7 +29,7 @@ class Utxo {
    */
   getCommitment() {
     if (!this._commitment) {
-      this._commitment = poseidonHash([this.amount, this.keypair.pubkey, this.blinding])
+      this._commitment = poseidonHash([this.amount, this.tokenId, this.srcPubKey, this.keypair.pubkey, this.blinding])
     }
     return this._commitment
   }
@@ -58,7 +62,12 @@ class Utxo {
    * @returns {string} `0x`-prefixed hex string with data
    */
   encrypt() {
-    const bytes = Buffer.concat([toBuffer(this.amount, 31), toBuffer(this.blinding, 31)])
+    const bytes = Buffer.concat([
+      toBuffer(this.amount, 31),
+      toBuffer(this.tokenId, 31),
+      toBuffer(this.srcPubKey, 31),
+      toBuffer(this.blinding, 31)
+    ])
     return this.keypair.encrypt(bytes)
   }
 
@@ -74,7 +83,9 @@ class Utxo {
     const buf = keypair.decrypt(data)
     return new Utxo({
       amount: BigNumber.from('0x' + buf.slice(0, 31).toString('hex')),
-      blinding: BigNumber.from('0x' + buf.slice(31, 62).toString('hex')),
+      tokenId: BigNumber.from('0x' + buf.slice(31, 62).toString('hex')),
+      srcPubKey: BigNumber.from('0x' + buf.slice(62, 93).toString('hex')),
+      blinding: BigNumber.from('0x' + buf.slice(93, 124).toString('hex')),
       keypair,
       index,
     })

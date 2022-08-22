@@ -697,14 +697,6 @@
   resolved "https://registry.yarnpkg.com/@iden3/bigarray/-/bigarray-0.0.2.tgz#6fc4ba5be18daf8a26ee393f2fb62b80d98c05e9"
   integrity sha512-Xzdyxqm1bOFF6pdIsiHLLl3HkSLjbhqJHVyqaTxXt3RqXBEnmsUmEW47H7VOi/ak7TdkRpNkxjyK5Zbkm+y52g==
 
-"@iden3/binfileutils@0.0.8":
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/@iden3/binfileutils/-/binfileutils-0.0.8.tgz#d1d349bdbaa9f0a99644232c7d75ea0db98ea1c7"
-  integrity sha512-/GqTsujUssGuQY+sd/XaLrA+OiCwzm+6yH28C57QQDWCHET2Logry9fGxU10n6XKdhCQBjZ7T/YMQkLwwkpRTQ==
-  dependencies:
-    fastfile "0.0.19"
-    ffjavascript "^0.2.30"
-
 "@nomiclabs/hardhat-ethers@^2.0.2":
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@nomiclabs/hardhat-ethers/-/hardhat-ethers-2.0.2.tgz#c472abcba0c5185aaa4ad4070146e95213c68511"
@@ -736,9 +728,9 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts-upgradeable/-/contracts-upgradeable-3.4.2.tgz#2c2a1b0fa748235a1f495b6489349776365c51b3"
   integrity sha512-mDlBS17ymb2wpaLcrqRYdnBAmP1EwqhOXMvqWk2c5Q1N1pm5TkiCtXM9Xzznh4bYsQBq0aIWEkFFE2+iLSN1Tw==
 
-"@openzeppelin@git+https://github.com/tornadocash/openzeppelin-contracts.git#6e46aa6946a7f215e7604169ddf46e1aebea850f":
+"@openzeppelin@git+https://github.com/tornadocash-community/openzeppelin-contracts.git#6e46aa6946a7f215e7604169ddf46e1aebea850f":
   version "3.4.1-solc-0.7-2"
-  resolved "git+https://github.com/tornadocash/openzeppelin-contracts.git#6e46aa6946a7f215e7604169ddf46e1aebea850f"
+  resolved "git+https://github.com/tornadocash-community/openzeppelin-contracts.git#6e46aa6946a7f215e7604169ddf46e1aebea850f"
 
 "@resolver-engine/core@^0.3.3":
   version "0.3.3"
@@ -2028,12 +2020,6 @@ blake2b-wasm@^1.1.0:
   dependencies:
     nanoassert "^1.0.0"
 
-"blake2b-wasm@https://github.com/jbaylina/blake2b-wasm.git":
-  version "2.1.0"
-  resolved "https://github.com/jbaylina/blake2b-wasm.git#0d5f024b212429c7f50a7f533aa3a2406b5b42b3"
-  dependencies:
-    nanoassert "^1.0.0"
-
 blake2b@^2.1.3:
   version "2.1.3"
   resolved "https://registry.yarnpkg.com/blake2b/-/blake2b-2.1.3.tgz#f5388be424768e7c6327025dad0c3c6d83351bca"
@@ -2520,14 +2506,6 @@ circom_runtime@0.1.12:
     ffjavascript "0.2.34"
     fnv-plus "^1.3.1"
 
-circom_runtime@0.1.13, circom_runtime@^0.1.13:
-  version "0.1.13"
-  resolved "https://registry.yarnpkg.com/circom_runtime/-/circom_runtime-0.1.13.tgz#90f86f35d989c48d4c27595b94664ea6918fbede"
-  integrity sha512-vmv19/0p5OTe5uCI7PWqPtB5vPoYWjczqKYnabaC5HOxX99R4K1MuNqEXsNEAoEfZrmfAQd7vXLcATN9NVnsPA==
-  dependencies:
-    ffjavascript "0.2.35"
-    fnv-plus "^1.3.1"
-
 circom_runtime@0.1.8:
   version "0.1.8"
   resolved "https://registry.yarnpkg.com/circom_runtime/-/circom_runtime-0.1.8.tgz#d967a1618fe5290849f9c0bbffb6b97b95c0f1c8"
@@ -2535,6 +2513,23 @@ circom_runtime@0.1.8:
   dependencies:
     ffjavascript "0.2.10"
     fnv-plus "^1.3.1"
+
+circom_runtime@^0.1.13:
+  version "0.1.13"
+  resolved "https://registry.yarnpkg.com/circom_runtime/-/circom_runtime-0.1.13.tgz#90f86f35d989c48d4c27595b94664ea6918fbede"
+  integrity sha512-vmv19/0p5OTe5uCI7PWqPtB5vPoYWjczqKYnabaC5HOxX99R4K1MuNqEXsNEAoEfZrmfAQd7vXLcATN9NVnsPA==
+  dependencies:
+    ffjavascript "0.2.35"
+    fnv-plus "^1.3.1"
+
+"circomlib@git+https://github.com/tornadocash-community/circomlib.git#d20d53411d1bef61f38c99a8b36d5d0cc4836aa1":
+  version "0.4.1"
+  resolved "git+https://github.com/tornadocash-community/circomlib.git#d20d53411d1bef61f38c99a8b36d5d0cc4836aa1"
+  dependencies:
+    blake-hash "^1.1.0"
+    blake2b "^2.1.3"
+    circom "0.5.33"
+    ffjavascript "0.1.0"
 
 "circomlib@git+https://github.com/tornadocash/circomlib.git#5beb6aee94923052faeecea40135d45b6ce6172c":
   version "0.0.20"
@@ -2545,15 +2540,6 @@ circom_runtime@0.1.8:
     snarkjs "git+https://github.com/tornadocash/snarkjs.git#869181cfaf7526fe8972073d31655493a04326d5"
     typedarray-to-buffer "^3.1.5"
     web3 "^1.2.11"
-
-"circomlib@git+https://github.com/tornadocash/circomlib.git#d20d53411d1bef61f38c99a8b36d5d0cc4836aa1":
-  version "0.4.1"
-  resolved "git+https://github.com/tornadocash/circomlib.git#d20d53411d1bef61f38c99a8b36d5d0cc4836aa1"
-  dependencies:
-    blake-hash "^1.1.0"
-    blake2b "^2.1.3"
-    circom "0.5.33"
-    ffjavascript "0.1.0"
 
 class-is@^1.1.0:
   version "1.1.0"
@@ -3141,7 +3127,7 @@ ee-first@1.1.1:
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
 
-ejs@^3.0.1, ejs@^3.1.6:
+ejs@^3.0.1:
   version "3.1.6"
   resolved "https://registry.yarnpkg.com/ejs/-/ejs-3.1.6.tgz#5bfd0a0689743bb5268b3550cceeebbc1702822a"
   integrity sha512-9lt9Zse4hPucPkoP7FHDF0LQAlGyF9JVpnClFLFH3aSSbxmyoqINRpp/9wePWJTUl4KOQwRL72Iw3InHPDkoGw==
@@ -4175,11 +4161,6 @@ fastfile@0.0.18:
   resolved "https://registry.yarnpkg.com/fastfile/-/fastfile-0.0.18.tgz#2b69bbbfd2fcccc9bc8099c27de1379b89756a4b"
   integrity sha512-q03PTKc+wptis4WmuFOwPNQx2p5myFUrl/dMgRlW9mymc1Egyc14JPHgiGnWK+sJ0+dBl2Vwtfh5GfSQltYOpw==
 
-fastfile@0.0.19:
-  version "0.0.19"
-  resolved "https://registry.yarnpkg.com/fastfile/-/fastfile-0.0.19.tgz#02cef9ade123b0a74adb794f4a1abcfa5719fd46"
-  integrity sha512-tz9nWR5KYb6eR2odFQ7oxqEkx8F3YQZ6NBJoJR92YEG3DqYOqyxMck8PKvTVNKx3uwvOqGnLXNScnqpdHRdHGQ==
-
 fetch-ponyfill@^4.0.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/fetch-ponyfill/-/fetch-ponyfill-4.1.0.tgz#ae3ce5f732c645eab87e4ae8793414709b239893"
@@ -4249,16 +4230,7 @@ ffjavascript@0.2.35:
     wasmcurves "0.0.14"
     web-worker "^1.0.0"
 
-ffjavascript@0.2.36:
-  version "0.2.36"
-  resolved "https://registry.yarnpkg.com/ffjavascript/-/ffjavascript-0.2.36.tgz#1ec3386ae260def96dde898999b4eee8b0f71902"
-  integrity sha512-OPgov0qQiV7wffycylpmEq6rm4Pu68LIMFbB1jrM5bCr1yXqgIMQ6IparbgRuFG5aj3NPmsorrGh7pQJnQlIIw==
-  dependencies:
-    big-integer "^1.6.48"
-    wasmcurves "0.0.14"
-    web-worker "^1.0.0"
-
-ffjavascript@^0.2.30, ffjavascript@^0.2.36:
+ffjavascript@^0.2.36:
   version "0.2.38"
   resolved "https://registry.yarnpkg.com/ffjavascript/-/ffjavascript-0.2.38.tgz#920832795be1e60a12832da80692b6c86259f3b7"
   integrity sha512-b4dobcci6QxxUvNYFCHw2ONhXwtgSHCzqxbH6c7ipWMOzyoG+MPRMZgAqnUREYX8UC6zqA7AiRmiIB76nxt2TQ==
@@ -6147,11 +6119,6 @@ log-symbols@4.1.0:
     chalk "^4.1.0"
     is-unicode-supported "^0.1.0"
 
-logplease@^1.2.15:
-  version "1.2.15"
-  resolved "https://registry.yarnpkg.com/logplease/-/logplease-1.2.15.tgz#3da442e93751a5992cc19010a826b08d0293c48a"
-  integrity sha512-jLlHnlsPSJjpwUfcNyUxXCl33AYg2cHhIf9QhGL2T4iPT0XPB+xP1LRKFPgIg1M/sg9kAJvy94w9CzBNrfnstA==
-
 looper@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/looper/-/looper-2.0.0.tgz#66cd0c774af3d4fedac53794f742db56da8f09ec"
@@ -7534,16 +7501,6 @@ r1csfile@0.0.16:
     fastfile "0.0.18"
     ffjavascript "0.2.22"
 
-r1csfile@0.0.32:
-  version "0.0.32"
-  resolved "https://registry.yarnpkg.com/r1csfile/-/r1csfile-0.0.32.tgz#64a6c63ff76b737b3ee22bcedb2bb9a033cbeb1a"
-  integrity sha512-DkRXeOg0iRmfhgIuWICvdkOiLHpyb7+AcUd/WHpqBJEUp27pe7wKXBR4Jr3TPYCT4sTV9a/F3bovyAC4wystnQ==
-  dependencies:
-    "@iden3/bigarray" "0.0.2"
-    "@iden3/binfileutils" "0.0.8"
-    fastfile "0.0.19"
-    ffjavascript "0.2.35"
-
 randombytes@^2.0.0, randombytes@^2.0.1, randombytes@^2.0.5, randombytes@^2.0.6, randombytes@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/randombytes/-/randombytes-2.1.0.tgz#df6f84372f0270dc65cdf6291349ab7a473d4f2a"
@@ -7663,11 +7620,6 @@ readdirp@~3.6.0:
   integrity sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==
   dependencies:
     picomatch "^2.2.1"
-
-readline@^1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/readline/-/readline-1.3.0.tgz#c580d77ef2cfc8752b132498060dc9793a7ac01c"
-  integrity sha1-xYDXfvLPyHUrEySYBg3JeTp6wBw=
 
 regenerate@^1.2.1:
   version "1.4.2"
@@ -8207,6 +8159,18 @@ snapdragon@^0.8.1:
     source-map-resolve "^0.5.0"
     use "^3.1.0"
 
+"snarkjs@git+https://github.com/tornadocash-community/snarkjs.git":
+  version "0.1.20"
+  uid "869181cfaf7526fe8972073d31655493a04326d5"
+  resolved "git+https://github.com/tornadocash-community/snarkjs.git#869181cfaf7526fe8972073d31655493a04326d5"
+  dependencies:
+    big-integer "^1.6.43"
+    chai "^4.2.0"
+    escape-string-regexp "^1.0.5"
+    eslint "^5.16.0"
+    keccak "^2.0.0"
+    yargs "^12.0.5"
+
 "snarkjs@git+https://github.com/tornadocash/snarkjs.git#869181cfaf7526fe8972073d31655493a04326d5":
   version "0.1.20"
   resolved "git+https://github.com/tornadocash/snarkjs.git#869181cfaf7526fe8972073d31655493a04326d5"
@@ -8217,21 +8181,6 @@ snapdragon@^0.8.1:
     eslint "^5.16.0"
     keccak "^2.0.0"
     yargs "^12.0.5"
-
-"snarkjs@git+https://github.com/tornadocash/snarkjs.git#f37f146948f3b28086493e71512006b030588fc2":
-  version "0.4.5"
-  resolved "git+https://github.com/tornadocash/snarkjs.git#f37f146948f3b28086493e71512006b030588fc2"
-  dependencies:
-    "@iden3/binfileutils" "0.0.8"
-    blake2b-wasm "https://github.com/jbaylina/blake2b-wasm.git"
-    circom_runtime "0.1.13"
-    ejs "^3.1.6"
-    fastfile "0.0.19"
-    ffjavascript "0.2.36"
-    js-sha3 "^0.8.0"
-    logplease "^1.2.15"
-    r1csfile "0.0.32"
-    readline "^1.3.0"
 
 solc@0.7.3:
   version "0.7.3"

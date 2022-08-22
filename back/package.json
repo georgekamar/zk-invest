@@ -7,8 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "circuit": "./scripts/buildCircuit.sh 2 && ./scripts/buildCircuit.sh 16",
-    "circuit_prod": "rm -rf ./artifacts/circuits && yarn changeTreeHeight 23 && ./scripts/buildCircuit_prod.sh 2 && ./scripts/buildCircuit_prod.sh 16 && tar -czvf artifacts/circuits.tar.gz artifacts/circuits",
+    "circuit": "./scripts/buildCircuit.sh 2 && ./scripts/buildCircuit.sh 16 && ./scripts/buildInvestCircuits.sh",
+    "circuit_prod": "rm -rf ./artifacts/circuits && yarn changeTreeHeight 23 && ./scripts/buildCircuit_prod.sh 2 && ./scripts/buildCircuit_prod.sh 16 && ./scripts/buildInvestCircuits_prod.sh && tar -czvf artifacts/circuits.tar.gz artifacts/circuits",
     "changeTreeHeight": "./scripts/changeTreeHeight.sh",
     "compile:hasher": "npx hardhat hasher",
     "compile": "npx hardhat compile && yarn compile:hasher",
@@ -26,7 +26,7 @@
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
-    "@openzeppelin": "git+https://github.com/tornadocash/openzeppelin-contracts.git#6e46aa6946a7f215e7604169ddf46e1aebea850f",
+    "@openzeppelin": "git+https://github.com/tornadocash-community/openzeppelin-contracts.git#6e46aa6946a7f215e7604169ddf46e1aebea850f",
     "@openzeppelin/contracts-upgradeable": "3.4.2",
     "@typechain/ethers-v5": "^7.0.1",
     "@typechain/hardhat": "^2.3.0",
@@ -34,7 +34,7 @@
     "chai": "^4.3.4",
     "circom": "^0.5.45",
     "circom_runtime": "^0.1.13",
-    "circomlib": "git+https://github.com/tornadocash/circomlib.git#d20d53411d1bef61f38c99a8b36d5d0cc4836aa1",
+    "circomlib": "git+https://github.com/tornadocash-community/circomlib.git#d20d53411d1bef61f38c99a8b36d5d0cc4836aa1",
     "dotenv": "^10.0.0",
     "eth-sig-util": "^3.0.1",
     "ethereum-waffle": "^3.2.0",
@@ -46,7 +46,7 @@
     "mocha": "^9.1.0",
     "omnibridge": "git+https://github.com/peppersec/omnibridge.git#30081f7a735eb03c9d6821a9617cc28efe71a682",
     "prompt-sync": "^4.2.0",
-    "snarkjs": "git+https://github.com/tornadocash/snarkjs.git#f37f146948f3b28086493e71512006b030588fc2",
+    "snarkjs": "git+https://github.com/tornadocash-community/snarkjs.git#f37f146948f3b28086493e71512006b030588fc2",
     "tmp-promise": "^3.0.2",
     "typechain": "^5.1.2"
   },

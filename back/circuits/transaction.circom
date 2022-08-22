@@ -6,11 +6,13 @@ include "./keypair.circom"
 Utxo structure:
 {
     amount,
+    tokenId,
+    srcPubKey,
     pubkey,
     blinding, // random number
 }
 
-commitment = hash(amount, pubKey, blinding)
+commitment = hash(amount, hash(tokenId, srcPubKey), pubKey, blinding)
 nullifier = hash(commitment, merklePath, sign(privKey, commitment, merklePath))
 */
 
@@ -26,6 +28,8 @@ template Transaction(levels, nIns, nOuts, zeroLeaf) {
     // data for transaction inputs
     signal         input inputNullifier[nIns];
     signal private input inAmount[nIns];
+    signal private input inTokenId[nIns];
+    signal private input inSrcPubkey[nIns];
     signal private input inPrivateKey[nIns];
     signal private input inBlinding[nIns];
     signal private input inPathIndices[nIns];
@@ -34,26 +38,56 @@ template Transaction(levels, nIns, nOuts, zeroLeaf) {
     // data for transaction outputs
     signal         input outputCommitment[nOuts];
     signal private input outAmount[nOuts];
+    signal private input outTokenId[nOuts];
+    signal private input outPrivateKey[nOuts];
     signal private input outPubkey[nOuts];
     signal private input outBlinding[nOuts];
 
     component inKeypair[nIns];
     component inSignature[nIns];
     component inCommitmentHasher[nIns];
+    component inCommitmentIntermediateHasher[nIns];
     component inNullifierHasher[nIns];
     component inTree[nIns];
     component inCheckRoot[nIns];
     var sumIns = 0;
+
+    component outKeypair[nOuts];
+
+    // make sure the nature of the token is the same
+    for (var i = 0; i < nIns - 1; i++) {
+        component isEqual = IsEqual();
+        isEqual.in[0] <== inTokenId[i];
+        isEqual.in[1] <== inTokenId[i+1];
+        isEqual.out === 1;
+    }
+    if(nOuts > 0){
+      component sameTokenIdsInter = IsEqual();
+      sameTokenIdsInter.in[0] <== inTokenId[nIns-1];
+      sameTokenIdsInter.in[1] <== outTokenId[0];
+      sameTokenIdsInter.out === 1;
+    }
+    for (var j = 0; j < nOuts-1; j++) {
+        component isEqual = IsEqual();
+        isEqual.in[0] <== outTokenId[j];
+        isEqual.in[1] <== outTokenId[j+1];
+        isEqual.out === 1;
+    }
 
     // verify correctness of transaction inputs
     for (var tx = 0; tx < nIns; tx++) {
         inKeypair[tx] = Keypair();
         inKeypair[tx].privateKey <== inPrivateKey[tx];
 
-        inCommitmentHasher[tx] = Poseidon(3);
+        inCommitmentIntermediateHasher[tx] = Poseidon(2);
+        inCommitmentIntermediateHasher[tx].inputs[0] <== inTokenId[tx];
+        inCommitmentIntermediateHasher[tx].inputs[1] <== inSrcPubkey[tx];
+
+        inCommitmentHasher[tx] = Poseidon(4);
         inCommitmentHasher[tx].inputs[0] <== inAmount[tx];
-        inCommitmentHasher[tx].inputs[1] <== inKeypair[tx].publicKey;
-        inCommitmentHasher[tx].inputs[2] <== inBlinding[tx];
+        inCommitmentHasher[tx].inputs[1] <== inCommitmentIntermediateHasher[tx].out;
+        inCommitmentHasher[tx].inputs[2] <== inKeypair[tx].publicKey;
+        inCommitmentHasher[tx].inputs[3] <== inBlinding[tx];
 
         inSignature[tx] = Signature();
         inSignature[tx].privateKey <== inPrivateKey[tx];
@@ -87,15 +121,24 @@ template Transaction(levels, nIns, nOuts, zeroLeaf) {
     }
 
     component outCommitmentHasher[nOuts];
+    component outCommitmentIntermediateHasher[nOuts];
     component outAmountCheck[nOuts];
     var sumOuts = 0;
 
     // verify correctness of transaction outputs
     for (var tx = 0; tx < nOuts; tx++) {
-        outCommitmentHasher[tx] = Poseidon(3);
+        outKeypair[tx] = Keypair();
+        outKeypair[tx].privateKey <== outPrivateKey[tx];
+
+        outCommitmentIntermediateHasher[tx] = Poseidon(2);
+        outCommitmentIntermediateHasher[tx].inputs[0] <== outTokenId[tx];
+        outCommitmentIntermediateHasher[tx].inputs[1] <== outKeypair[tx].publicKey;
+
+        outCommitmentHasher[tx] = Poseidon(4);
         outCommitmentHasher[tx].inputs[0] <== outAmount[tx];
-        outCommitmentHasher[tx].inputs[1] <== outPubkey[tx];
-        outCommitmentHasher[tx].inputs[2] <== outBlinding[tx];
+        outCommitmentHasher[tx].inputs[1] <== outCommitmentIntermediateHasher[tx].out;
+        outCommitmentHasher[tx].inputs[2] <== outPubkey[tx];
+        outCommitmentHasher[tx].inputs[3] <== outBlinding[tx];
         outCommitmentHasher[tx].out === outputCommitment[tx];
 
         // Check that amount fits into 248 bits to prevent overflow
