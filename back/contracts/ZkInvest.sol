@@ -56,12 +56,6 @@ contract ZkInvest is TornadoPool, ERC1155 {
   ProjectToken[] public projectTokens;
   Project[] public projects;
 
-  struct Verifiers {
-    IVerifier verifier2;
-    IVerifier verifier16;
-    IVerifier projectTokenTransferVerifier;
-  }
-
   /**
     @dev The constructor
     @param _verifiers the addresses of SNARK verifiers
@@ -76,7 +70,7 @@ contract ZkInvest is TornadoPool, ERC1155 {
     @param _tokensUri URI for ERC1155
   */
   constructor(
-    Verifiers memory _verifiers,
+    IVerifier[3] memory _verifiers,
     uint32 _levels,
     address _hasher,
     IERC6777 _token,
@@ -87,10 +81,10 @@ contract ZkInvest is TornadoPool, ERC1155 {
     address _multisig,
     string memory _tokensUri
   )
-    TornadoPool(_verifiers.verifier2, _verifiers.verifier16, _levels, _hasher, _token, _omniBridge, _l1Unwrapper, _governance, _l1ChainId, _multisig)
+    TornadoPool(_verifiers[0], _verifiers[1], _levels, _hasher, _token, _omniBridge, _l1Unwrapper, _governance, _l1ChainId, _multisig)
     ERC1155(_tokensUri)
   {
-    projectTokenTransferVerifier = _verifiers.projectTokenTransferVerifier;
+    projectTokenTransferVerifier = _verifiers[2];
   }
 
 
