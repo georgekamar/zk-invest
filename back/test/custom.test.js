@@ -29,6 +29,7 @@ describe('Custom Tests', function () {
     const [sender, gov, l1Unwrapper, multisig] = await ethers.getSigners()
     const verifier2 = await deploy('Verifier2')
     const verifier16 = await deploy('Verifier16')
+    const projectTokenTransferVerifier = await deploy('ProjectTokenTransferVerifier')
     const hasher = await deploy('Hasher')
 
     const token = await deploy('PermittableToken', 'Wrapped ETH', 'WETH', 18, l1ChainId)
@@ -37,11 +38,14 @@ describe('Custom Tests', function () {
     const amb = await deploy('MockAMB', gov.address, l1ChainId)
     const omniBridge = await deploy('MockOmniBridge', amb.address)
 
+    const tokensUri = 'https://speedtest.net';
+
     /** @type {TornadoPool} */
     const tornadoPoolImpl = await deploy(
-      'TornadoPool',
+      'ZkInvest',
       verifier2.address,
       verifier16.address,
+      projectTokenTransferVerifier.address,
       MERKLE_TREE_HEIGHT,
       hasher.address,
       token.address,
@@ -50,7 +54,10 @@ describe('Custom Tests', function () {
       gov.address,
       l1ChainId,
       multisig.address,
+      tokensUri
     )
+
+    console.log(tornadoPoolImpl)
 
     const { data } = await tornadoPoolImpl.populateTransaction.initialize(
       MINIMUM_WITHDRAWAL_AMOUNT,

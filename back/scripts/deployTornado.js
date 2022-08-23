@@ -25,16 +25,24 @@ async function main() {
   await verifier16.deployed()
   console.log(`verifier16: ${verifier16.address}`)
 
+  const ProjectTokenTransferVerifier = await ethers.getContractFactory('ProjectTokenTransferVerifier')
+  const projectTokenTransferVerifier = await ProjectTokenTransferVerifier.deploy()
+  await projectTokenTransferVerifier.deployed()
+  console.log(`projectTokenTransferVerifier: ${projectTokenTransferVerifier.address}`)
+
   const Hasher = await await ethers.getContractFactory('Hasher')
   const hasher = await Hasher.deploy()
   await hasher.deployed()
   console.log(`hasher: ${hasher.address}`)
 
-  const Pool = await ethers.getContractFactory('TornadoPool')
+  const tokensUri = 'https://speedtest.net';
+
+  const Pool = await ethers.getContractFactory('ZkInvest')
   console.log(
     `constructor args:\n${JSON.stringify([
       verifier2.address,
       verifier16.address,
+      projectTokenTransferVerifier.address,
       MERKLE_TREE_HEIGHT,
       hasher.address,
       token,
@@ -43,6 +51,7 @@ async function main() {
       govAddress,
       l1ChainId,
       multisig,
+      tokensUri
     ]).slice(1, -1)}\n`,
   )
 
@@ -50,6 +59,7 @@ async function main() {
   const tornadoImpl = await Pool.deploy(
     verifier2.address,
     verifier16.address,
+    projectTokenTransferVerifier.address,
     MERKLE_TREE_HEIGHT,
     hasher.address,
     token,
@@ -58,6 +68,7 @@ async function main() {
     govAddress,
     l1ChainId,
     multisig,
+    tokensUri
   )
   await tornadoImpl.deployed()
   console.log(`TornadoPool implementation address: ${tornadoImpl.address}`)
