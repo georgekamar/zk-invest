@@ -26,13 +26,17 @@ async function getProof({
   relayer,
   isL1Withdrawal,
   l1Fee,
+  isInvestment
 }) {
   inputs = shuffle(inputs)
   outputs = shuffle(outputs)
 
   let inputMerklePathIndices = []
   let inputMerklePathElements = []
-
+  // console.log('inputs')
+  // console.log(inputs)
+  // console.log('outputs')
+  // console.log(outputs)
   for (const input of inputs) {
     if (input.amount > 0) {
       input.index = tree.indexOf(toFixedHex(input.getCommitment()))
@@ -68,6 +72,8 @@ async function getProof({
 
     // data for 2 transaction inputs
     inAmount: inputs.map((x) => x.amount),
+    inTokenId: inputs.map((x) => x.tokenId),
+    inSrcPubkey: inputs.map((x) => x.srcPubKey),
     inPrivateKey: inputs.map((x) => x.keypair.privkey),
     inBlinding: inputs.map((x) => x.blinding),
     inPathIndices: inputMerklePathIndices,
@@ -75,6 +81,8 @@ async function getProof({
 
     // data for 2 transaction outputs
     outAmount: outputs.map((x) => x.amount),
+    outTokenId: outputs.map((x) => x.tokenId),
+    outSrcPubkey: outputs.map((x) => x.srcPubKey),
     outBlinding: outputs.map((x) => x.blinding),
     outPubkey: outputs.map((x) => x.keypair.pubkey),
   }
@@ -106,6 +114,7 @@ async function prepareTransaction({
   relayer = 0,
   isL1Withdrawal = false,
   l1Fee = 0,
+  isInvestment = false
 }) {
   if (inputs.length > 16 || outputs.length > 2) {
     throw new Error('Incorrect inputs/outputs count')
@@ -131,6 +140,7 @@ async function prepareTransaction({
     relayer,
     isL1Withdrawal,
     l1Fee,
+    isInvestment
   })
 
   return {

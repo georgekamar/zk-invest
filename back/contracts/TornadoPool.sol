@@ -39,7 +39,6 @@ contract TornadoPool is MerkleTreeWithHistory, IERC20Receiver, ReentrancyGuard, 
   uint256 public maximumDepositAmount;
   mapping(bytes32 => bool) public nullifierHashes;
 
-  // for pending transactions
   mapping(bytes32 => bool) public pendingNullifierHashes;
 
   struct ExtData {
@@ -70,8 +69,6 @@ contract TornadoPool is MerkleTreeWithHistory, IERC20Receiver, ReentrancyGuard, 
   event NewCommitment(bytes32 commitment, uint256 index, bytes encryptedOutput);
   event NewNullifier(bytes32 nullifier);
   event PublicKey(address indexed owner, bytes key);
-
-  event NewPendingCommitment(bytes32 commitment, bytes encryptedOutput);
 
   modifier onlyMultisig() {
     require(msg.sender == multisig, "only governance");
@@ -212,7 +209,6 @@ contract TornadoPool is MerkleTreeWithHistory, IERC20Receiver, ReentrancyGuard, 
     return pendingNullifierHashes[_nullifierHash];
   }
 
-
   function verifyProof(Proof memory _args) public view returns (bool) {
     if (_args.inputNullifiers.length == 2) {
       return
@@ -267,6 +263,7 @@ contract TornadoPool is MerkleTreeWithHistory, IERC20Receiver, ReentrancyGuard, 
 
   function _transact(Proof memory _args, ExtData memory _extData) internal nonReentrant {
     require(isKnownRoot(_args.root), "Invalid merkle root");
+    // require(_args.isInvestment == false, "Cannot be an investment transaction");
     for (uint256 i = 0; i < _args.inputNullifiers.length; i++) {
       require(!isSpent(_args.inputNullifiers[i]), "Input is already spent");
       require(!isPending(_args.inputNullifiers[i]), "Input pending");

@@ -13,6 +13,7 @@
     "compile:hasher": "npx hardhat hasher",
     "compile": "npx hardhat compile && yarn compile:hasher",
     "build": "npm run circuit && npm run compile",
+    "postinstall": "patch-package",
     "deploy": "npx hardhat run scripts/deploy.js --network optimism",
     "test": "npx hardhat test",
     "eslint": "eslint --ext .js --ignore-path .gitignore .",
@@ -46,7 +47,7 @@
     "mocha": "^9.1.0",
     "omnibridge": "git+https://github.com/peppersec/omnibridge.git#30081f7a735eb03c9d6821a9617cc28efe71a682",
     "prompt-sync": "^4.2.0",
-    "snarkjs": "git+https://github.com/tornadocash-community/snarkjs.git#f37f146948f3b28086493e71512006b030588fc2",
+    "snarkjs": "git+https://github.com/staccDOTsol/snarkjs.git#f37f146948f3b28086493e71512006b030588fc2",
     "tmp-promise": "^3.0.2",
     "typechain": "^5.1.2"
   },

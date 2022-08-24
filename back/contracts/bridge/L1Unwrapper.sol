@@ -80,26 +80,26 @@ contract L1Unwrapper is WETHOmnibridgeRouter {
    * @param _data extra data passed alongside with relayTokensAndCall on the other side of the bridge.
    * Should contain coins receiver address and L1 executer fee amount.
    */
-  // function onTokenBridged(
-  //   address _token,
-  //   uint256 _value,
-  //   bytes memory _data
-  // ) external override {
-  //   require(_token == address(WETH), "only WETH token");
-  //   require(msg.sender == address(bridge), "only from bridge address");
-  //   require(_data.length == 64, "incorrect data length");
-  //
-  //   WETH.withdraw(_value);
-  //
-  //   (address payable receipient, uint256 l1Fee) = abi.decode(_data, (address, uint256));
-  //
-  //   AddressHelper.safeSendValue(receipient, _value.sub(l1Fee));
-  //
-  //   if (l1Fee > 0) {
-  //     address payable l1FeeTo = l1FeeReceiver != payable(address(0)) ? l1FeeReceiver : payable(tx.origin);
-  //     AddressHelper.safeSendValue(l1FeeTo, l1Fee);
-  //   }
-  // }
+  function onTokenBridged(
+    address _token,
+    uint256 _value,
+    bytes memory _data
+  ) external override {
+    require(_token == address(WETH), "only WETH token");
+    require(msg.sender == address(bridge), "only from bridge address");
+    require(_data.length == 64, "incorrect data length");
+
+    WETH.withdraw(_value);
+
+    (address payable receipient, uint256 l1Fee) = abi.decode(_data, (address, uint256));
+
+    AddressHelper.safeSendValue(receipient, _value.sub(l1Fee));
+
+    if (l1Fee > 0) {
+      address payable l1FeeTo = l1FeeReceiver != payable(address(0)) ? l1FeeReceiver : payable(tx.origin);
+      AddressHelper.safeSendValue(l1FeeTo, l1Fee);
+    }
+  }
 
   /**
    * @dev Sets l1FeeReceiver address.

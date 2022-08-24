@@ -12,7 +12,7 @@ const { encodeDataForBridge } = require('./utils')
 
 const MERKLE_TREE_HEIGHT = 5
 const l1ChainId = 1
-const MINIMUM_WITHDRAWAL_AMOUNT = utils.parseEther(process.env.MINIMUM_WITHDRAWAL_AMOUNT || '0.05')
+// const MINIMUM_WITHDRAWAL_AMOUNT = utils.parseEther(process.env.MINIMUM_WITHDRAWAL_AMOUNT || '0.05')
 const MAXIMUM_DEPOSIT_AMOUNT = utils.parseEther(process.env.MAXIMUM_DEPOSIT_AMOUNT || '1')
 
 describe('Custom Tests', function () {
@@ -43,9 +43,11 @@ describe('Custom Tests', function () {
     /** @type {TornadoPool} */
     const tornadoPoolImpl = await deploy(
       'ZkInvest',
-      verifier2.address,
-      verifier16.address,
-      projectTokenTransferVerifier.address,
+      [
+        verifier2.address,
+        verifier16.address,
+        projectTokenTransferVerifier.address
+      ],
       MERKLE_TREE_HEIGHT,
       hasher.address,
       token.address,
@@ -57,10 +59,7 @@ describe('Custom Tests', function () {
       tokensUri
     )
 
-    console.log(tornadoPoolImpl)
-
     const { data } = await tornadoPoolImpl.populateTransaction.initialize(
-      MINIMUM_WITHDRAWAL_AMOUNT,
       MAXIMUM_DEPOSIT_AMOUNT,
     )
     const proxy = await deploy(
@@ -71,7 +70,6 @@ describe('Custom Tests', function () {
       amb.address,
       l1ChainId,
     )
-
     const tornadoPool = tornadoPoolImpl.attach(proxy.address)
 
     await token.approve(tornadoPool.address, utils.parseEther('10000'))
@@ -94,7 +92,6 @@ describe('Custom Tests', function () {
         tornadoPool,
         outputs: [aliceDepositUtxo],
       })
-
       const onTokenBridgedData = encodeDataForBridge({
         proof: args,
         extData,
@@ -121,6 +118,7 @@ describe('Custom Tests', function () {
         amount: aliceDepositAmount.sub(aliceWithdrawAmount),
         keypair: aliceKeypair,
       })
+
       await transaction({
         tornadoPool,
         inputs: [aliceDepositUtxo],

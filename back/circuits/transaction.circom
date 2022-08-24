@@ -39,7 +39,7 @@ template Transaction(levels, nIns, nOuts, zeroLeaf) {
     signal         input outputCommitment[nOuts];
     signal private input outAmount[nOuts];
     signal private input outTokenId[nOuts];
-    signal private input outPrivateKey[nOuts];
+    signal private input outSrcPubkey[nOuts];
     signal private input outPubkey[nOuts];
     signal private input outBlinding[nOuts];
 
@@ -52,26 +52,16 @@ template Transaction(levels, nIns, nOuts, zeroLeaf) {
     component inCheckRoot[nIns];
     var sumIns = 0;
 
-    component outKeypair[nOuts];
-
     // make sure the nature of the token is the same
+
     for (var i = 0; i < nIns - 1; i++) {
-        component isEqual = IsEqual();
-        isEqual.in[0] <== inTokenId[i];
-        isEqual.in[1] <== inTokenId[i+1];
-        isEqual.out === 1;
+        inTokenId[i] === inTokenId[i+1];
     }
-    if(nOuts > 0){
-      component sameTokenIdsInter = IsEqual();
-      sameTokenIdsInter.in[0] <== inTokenId[nIns-1];
-      sameTokenIdsInter.in[1] <== outTokenId[0];
-      sameTokenIdsInter.out === 1;
+    if(nOuts > 0 && nIns > 0){
+      inTokenId[nIns-1] === outTokenId[0];
     }
     for (var j = 0; j < nOuts-1; j++) {
-        component isEqual = IsEqual();
-        isEqual.in[0] <== outTokenId[j];
-        isEqual.in[1] <== outTokenId[j+1];
-        isEqual.out === 1;
+        outTokenId[j] === outTokenId[j+1];
     }
 
     // verify correctness of transaction inputs
@@ -127,12 +117,10 @@ template Transaction(levels, nIns, nOuts, zeroLeaf) {
 
     // verify correctness of transaction outputs
     for (var tx = 0; tx < nOuts; tx++) {
-        outKeypair[tx] = Keypair();
-        outKeypair[tx].privateKey <== outPrivateKey[tx];
 
         outCommitmentIntermediateHasher[tx] = Poseidon(2);
         outCommitmentIntermediateHasher[tx].inputs[0] <== outTokenId[tx];
-        outCommitmentIntermediateHasher[tx].inputs[1] <== outKeypair[tx].publicKey;
+        outCommitmentIntermediateHasher[tx].inputs[1] <== outSrcPubkey[tx];
 
         outCommitmentHasher[tx] = Poseidon(4);
         outCommitmentHasher[tx].inputs[0] <== outAmount[tx];

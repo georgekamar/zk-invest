@@ -31,7 +31,8 @@ contract ZkInvest is TornadoPool, ERC1155 {
   mapping(bytes32 => bytes32) public pendingCommitmentToCommitment;
   mapping(bytes32 => bytes) public pendingCommitmentToEncryptedOutput;
 
-
+  // for pending transactions
+  // mapping(bytes32 => bool) public pendingNullifierHashes;
 
   struct ProjectTokenTransferProof {
     bytes proof;
@@ -53,12 +54,14 @@ contract ZkInvest is TornadoPool, ERC1155 {
     string description;
   }
 
+  event NewPendingCommitment(bytes32 commitment, bytes encryptedOutput);
+
   ProjectToken[] public projectTokens;
   Project[] public projects;
 
   /**
     @dev The constructor
-    @param _verifiers the addresses of SNARK verifiers
+    @param _verifiers the addresses of SNARK verifiers: 0 is verifier2, 1 is verifier16, 2 is projectTokenTransferVerifier
     @param _levels hight of the commitments merkle tree
     @param _hasher hasher address for the merkle tree
     @param _token token address for the pool
@@ -88,6 +91,9 @@ contract ZkInvest is TornadoPool, ERC1155 {
   }
 
 
+  // function isPending(bytes32 _nullifierHash) public view returns (bool) {
+  //   return pendingNullifierHashes[_nullifierHash];
+  // }
 
 
   // function changeTokenValue(
@@ -127,8 +133,18 @@ contract ZkInvest is TornadoPool, ERC1155 {
       );
   }
 
+  // function transact(Proof memory _args, ExtData memory _extData) public override {
+  //   if (_extData.extAmount > 0) {
+  //     // for deposits from L2
+  //     token.transferFrom(msg.sender, address(this), uint256(_extData.extAmount));
+  //     require(uint256(_extData.extAmount) <= maximumDepositAmount, "amount is larger than maximumDepositAmount");
+  //   }
+  //   _transact(_args, _extData);
+  // }
+
   function _transactWithProject(Proof memory _args, ExtData memory _extData) internal nonReentrant {
     require(isKnownRoot(_args.root), "Invalid merkle root");
+    // require(_args.isInvestment == true, "Must be investment transaction");
     for (uint256 i = 0; i < _args.inputNullifiers.length; i++) {
       require(!isSpent(_args.inputNullifiers[i]), "Input is already spent");
       require(!isPending(_args.inputNullifiers[i]), "Input pending");
