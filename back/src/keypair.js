@@ -69,6 +69,7 @@ class Keypair {
       str = str.slice(2)
     }
     if (str.length !== 128) {
+      console.log(str.length)
       throw new Error('Invalid key length')
     }
     return Object.assign(new Keypair(), {

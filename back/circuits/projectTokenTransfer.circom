@@ -1,5 +1,4 @@
 include "../node_modules/circomlib/circuits/poseidon.circom";
-include "./keypair.circom"
 
 /*
 Utxo structure:
@@ -23,25 +22,23 @@ template ProjectTokenTransfer() {
     signal         input tokenValue;
     signal         input sentTokenId;
     signal private input receivedTokenId;
-    signal private input receivedSrcAddress;
+    signal private input receivedSrcPubKey;
     signal private input receivedAmount;
     signal private input receivedPubKey;
     signal private input receivedBlinding;
 
     signal private input sentAmount;
     signal private input sentBlinding;
-    signal private input sentPrivateKey;
+    signal private input sentSrcPubKey;
 
 
-
-    component keypair = Keypair();
     component commitmentHasher[4];
 
 
     // verify correctness of received commitment
     commitmentHasher[0] = Poseidon(2);
-    commitmentHasher[0].inputs[1] <== receivedTokenId;
-    commitmentHasher[0].inputs[2] <== receivedSrcAddress;
+    commitmentHasher[0].inputs[0] <== receivedTokenId;
+    commitmentHasher[0].inputs[1] <== receivedSrcPubKey;
 
     commitmentHasher[1] = Poseidon(4);
     commitmentHasher[1].inputs[0] <== receivedAmount;
@@ -50,23 +47,22 @@ template ProjectTokenTransfer() {
     commitmentHasher[1].inputs[3] <== receivedBlinding;
     commitmentHasher[1].out === commitmentReceived;
 
-    keypair.privateKey <== sentPrivateKey;
 
     commitmentHasher[2] = Poseidon(2);
-    commitmentHasher[2].inputs[1] <== receivedTokenId;
-    commitmentHasher[2].inputs[2] <== receivedSrcAddress;
+    commitmentHasher[2].inputs[0] <== sentTokenId;
+    commitmentHasher[2].inputs[1] <== sentSrcPubKey;
 
     commitmentHasher[3] = Poseidon(4);
     commitmentHasher[3].inputs[0] <== sentAmount;
     commitmentHasher[3].inputs[1] <== commitmentHasher[2].out;
-    commitmentHasher[3].inputs[2] <== receivedSrcAddress;
+    commitmentHasher[3].inputs[2] <== receivedSrcPubKey;
     commitmentHasher[3].inputs[3] <== sentBlinding;
     commitmentHasher[3].out === commitmentSent;
 
     // check amount sent corresponds to tokenValue
 
-    receivedTokenId === -1;
-    tokenValue * receivedAmount === sentAmount;
+    receivedTokenId === 0;
+    receivedAmount === sentAmount * tokenValue;
 
 }
 

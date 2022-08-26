@@ -16,6 +16,46 @@ async function buildMerkleTree({ tornadoPool }) {
   return new MerkleTree(MERKLE_TREE_HEIGHT, leaves, { hashFunction: poseidonHash2 })
 }
 
+async function getProjectTokenTransferProof({
+  utxoReceived,
+  encryptedOutput,
+  utxoSent,
+  projectTokenValue
+}) {
+
+  let input = {
+    commitmentReceived: utxoReceived.getCommitment(),
+    commitmentSent: utxoSent.getCommitment(),
+    tokenValue: projectTokenValue,
+    sentTokenId: utxoSent.tokenId,
+    //private
+    receivedTokenId: utxoReceived.tokenId,
+    receivedSrcPubKey: utxoReceived.srcPubKey,
+    receivedAmount: utxoReceived.amount,
+    receivedPubKey: utxoReceived.keypair.pubkey,
+    receivedBlinding: utxoReceived.blinding,
+    sentAmount: utxoSent.amount,
+    sentBlinding: utxoSent.blinding,
+    sentSrcPubKey: utxoSent.srcPubKey
+  }
+
+  const proof = await prove(input, `./artifacts/circuits/projectTokenTransfer`)
+
+  const args = {
+    proof,
+    commitmentReceived: toFixedHex(utxoReceived.getCommitment()),
+    commitmentSent: toFixedHex(utxoSent.getCommitment()),
+    tokenValue: toFixedHex(projectTokenValue),
+    sentTokenId: toFixedHex(utxoSent.tokenId)
+  }
+  // console.log('Solidity args', args)
+
+  return {
+    args
+  }
+
+}
+
 async function getProof({
   inputs,
   outputs,
@@ -33,10 +73,7 @@ async function getProof({
 
   let inputMerklePathIndices = []
   let inputMerklePathElements = []
-  // console.log('inputs')
-  // console.log(inputs)
-  // console.log('outputs')
-  // console.log(outputs)
+
   for (const input of inputs) {
     if (input.amount > 0) {
       input.index = tree.indexOf(toFixedHex(input.getCommitment()))
@@ -173,4 +210,57 @@ async function registerAndTransact({ tornadoPool, account, ...rest }) {
   await receipt.wait()
 }
 
-module.exports = { transaction, registerAndTransact, prepareTransaction, buildMerkleTree }
+async function createProject({ tornadoPool, account, title, description, tokenValue }) {
+    const receipt = await tornadoPool.createProject(account, title, description, tokenValue, {
+      gasLimit: 2e6
+    });
+    await receipt.wait();
+}
+
+async function transactionWithProject({ tornadoPool, ...rest }) {
+  const { args, extData } = await prepareTransaction({
+    tornadoPool,
+    ...rest,
+  })
+
+  const receipt = await tornadoPool.transactWithProject(args, extData, {
+    gasLimit: 2e6,
+  })
+  return await receipt.wait()
+}
+
+async function transactionWithProject({ tornadoPool, ...rest }) {
+  const { args, extData } = await prepareTransaction({
+    tornadoPool,
+    ...rest,
+  })
+
+  const receipt = await tornadoPool.transactWithProject(args, extData, {
+    gasLimit: 2e6,
+  })
+  return await receipt.wait()
+}
+
+async function acceptInvestment({ tornadoPool, utxoReceived, utxoSent, projectTokenValue }) {
+  const { args } = await getProjectTokenTransferProof({
+    tornadoPool,
+    utxoReceived,
+    utxoSent,
+    projectTokenValue
+  })
+  let emptyUtxo = new Utxo({amount: 0});
+  const receipt = await tornadoPool.acceptInvestment(args, utxoSent.encrypt(), emptyUtxo.getCommitment(), {
+    gasLimit: 2e6,
+  })
+  return await receipt.wait()
+}
+
+module.exports = {
+  createProject,
+  transactionWithProject,
+  acceptInvestment,
+  transaction,
+  registerAndTransact,
+  prepareTransaction,
+  buildMerkleTree
+}

@@ -20,7 +20,7 @@ import "./TornadoPool.sol";
 import { IVerifier } from "./interfaces/IVerifier.sol";
 
 
-contract ZkInvest is TornadoPool, ERC1155 {
+contract ZkInvest is TornadoPool {
 
   IVerifier public immutable projectTokenTransferVerifier;
 
@@ -39,7 +39,7 @@ contract ZkInvest is TornadoPool, ERC1155 {
     bytes32 commitmentReceived;
     bytes32 commitmentSent;
     uint256 tokenValue;
-    uint256 tokenId;
+    uint256 sentTokenId;
   }
 
   struct ProjectToken {
@@ -70,7 +70,6 @@ contract ZkInvest is TornadoPool, ERC1155 {
     @param _governance owner address
     @param _l1ChainId chain id of L1
     @param _multisig multisig on L2
-    @param _tokensUri URI for ERC1155
   */
   constructor(
     IVerifier[3] memory _verifiers,
@@ -81,13 +80,14 @@ contract ZkInvest is TornadoPool, ERC1155 {
     address _l1Unwrapper,
     address _governance,
     uint256 _l1ChainId,
-    address _multisig,
-    string memory _tokensUri
+    address _multisig
+    // string memory _tokensUri
   )
     TornadoPool(_verifiers[0], _verifiers[1], _levels, _hasher, _token, _omniBridge, _l1Unwrapper, _governance, _l1ChainId, _multisig)
-    ERC1155(_tokensUri)
+    // ERC1155(_tokensUri)
   {
     projectTokenTransferVerifier = _verifiers[2];
+    _initializeProjects();
   }
 
 
@@ -104,6 +104,14 @@ contract ZkInvest is TornadoPool, ERC1155 {
   //   projectTokens[_tokenId].value = _newValue;
   // }
 
+  function _initializeProjects() internal {
+    if(projects.length == 0){
+      projectTokens.push(ProjectToken(0, 0));
+      projects.push(Project(Account(address(this), ""), 0, "Reserved", "none"));
+      projectTokenToOwner[0] = address(this);
+    }
+  }
+
   function createProject(
     Account memory _account,
     string memory _title,
@@ -112,6 +120,7 @@ contract ZkInvest is TornadoPool, ERC1155 {
   ) public {
     register(_account);
     require(projectOwnerToToken[_account.owner] == 0, "only one project per address");
+    _initializeProjects();
     // create new token type here
     uint256 newProjectTokenId = projectTokens.length;
     projectTokenToOwner[newProjectTokenId] = _account.owner;
@@ -127,8 +136,8 @@ contract ZkInvest is TornadoPool, ERC1155 {
         [
           uint256(_args.commitmentReceived),
           uint256(_args.commitmentSent),
-          uint256(_args.tokenId),
-          uint256(_args.tokenValue)
+          uint256(_args.tokenValue),
+          uint256(_args.sentTokenId)
         ]
       );
   }
@@ -142,17 +151,9 @@ contract ZkInvest is TornadoPool, ERC1155 {
   //   _transact(_args, _extData);
   // }
 
-  function _transactWithProject(Proof memory _args, ExtData memory _extData) internal nonReentrant {
-    require(isKnownRoot(_args.root), "Invalid merkle root");
-    // require(_args.isInvestment == true, "Must be investment transaction");
-    for (uint256 i = 0; i < _args.inputNullifiers.length; i++) {
-      require(!isSpent(_args.inputNullifiers[i]), "Input is already spent");
-      require(!isPending(_args.inputNullifiers[i]), "Input pending");
-    }
-    require(uint256(_args.extDataHash) == uint256(keccak256(abi.encode(_extData))) % FIELD_SIZE, "Incorrect external data hash");
-    require(_args.publicAmount == calculatePublicAmount(_extData.extAmount, _extData.fee), "Invalid public amount");
-    require(_args.publicAmount == 0, "Pending transactions only within pool");
-    require(verifyProof(_args), "Invalid transaction proof");
+  function transactWithProject(Proof memory _args, ExtData memory _extData) public nonReentrant {
+
+    _preTransact(_args, _extData);
 
     for (uint256 i = 0; i < _args.inputNullifiers.length; i++) {
       pendingNullifierHashes[_args.inputNullifiers[i]] = true;
@@ -177,14 +178,14 @@ contract ZkInvest is TornadoPool, ERC1155 {
 
   }
 
-  function _acceptInvestment(ProjectTokenTransferProof memory _args, bytes memory _encryptedOutput) internal nonReentrant {
+  function acceptInvestment(ProjectTokenTransferProof memory _args, bytes memory _encryptedOutput, bytes32 _emptyCommitment) public nonReentrant {
     require(pendingCommitmentToCommitment[_args.commitmentReceived] != 0, "Pending commitment must still be pending");
-    require(_args.tokenId == projectOwnerToToken[msg.sender], "TokenId must be from project owner");
-    require(_args.tokenValue == projectTokens[_args.tokenId].value, "Value of token must be same as advertized");
+    require(_args.sentTokenId == projectOwnerToToken[msg.sender], "TokenId must be from project owner");
+    require(_args.tokenValue == projectTokens[_args.sentTokenId].value, "Value of token must be same as advertized");
 
     require(verifyProjectTokenTransferProof(_args), "Invalid project token transfer proof");
 
-    _insert(_args.commitmentSent, _args.commitmentSent);
+    _insert(_args.commitmentSent, _emptyCommitment);
     emit NewCommitment(_args.commitmentSent, nextIndex - 1, _encryptedOutput);
 
     bytes32[] memory investmentNullifiers = (pendingCommitmentToNullifiers[_args.commitmentReceived].length > 0) ? pendingCommitmentToNullifiers[_args.commitmentReceived] : pendingCommitmentToNullifiers[pendingCommitmentToCommitment[_args.commitmentReceived]];

@@ -38,7 +38,7 @@ describe('Custom Tests', function () {
     const amb = await deploy('MockAMB', gov.address, l1ChainId)
     const omniBridge = await deploy('MockOmniBridge', amb.address)
 
-    const tokensUri = 'https://speedtest.net';
+    // const tokensUri = 'https://speedtest.net';
 
     /** @type {TornadoPool} */
     const tornadoPoolImpl = await deploy(
@@ -56,7 +56,7 @@ describe('Custom Tests', function () {
       gov.address,
       l1ChainId,
       multisig.address,
-      tokensUri
+      // tokensUri
     )
 
     const { data } = await tornadoPoolImpl.populateTransaction.initialize(

@@ -42,7 +42,7 @@ describe('TornadoPool', function () {
     const amb = await deploy('MockAMB', gov.address, l1ChainId)
     const omniBridge = await deploy('MockOmniBridge', amb.address)
 
-    const tokensUri = 'https://speedtest.net';
+    // const tokensUri = 'https://speedtest.net';
 
     // deploy L1Unwrapper with CREATE2
     const singletonFactory = await ethers.getContractAt('SingletonFactory', config.singletonFactory)
@@ -71,7 +71,7 @@ describe('TornadoPool', function () {
       gov.address,
       l1ChainId,
       multisig.address,
-      tokensUri
+      // tokensUri
     )
 
     const { data } = await tornadoPoolImpl.populateTransaction.initialize(MAXIMUM_DEPOSIT_AMOUNT)

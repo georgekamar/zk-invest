@@ -261,7 +261,7 @@ contract TornadoPool is MerkleTreeWithHistory, IERC20Receiver, ReentrancyGuard, 
     emit PublicKey(_account.owner, _account.publicKey);
   }
 
-  function _transact(Proof memory _args, ExtData memory _extData) internal nonReentrant {
+  function _preTransact(Proof memory _args, ExtData memory _extData) internal view {
     require(isKnownRoot(_args.root), "Invalid merkle root");
     // require(_args.isInvestment == false, "Cannot be an investment transaction");
     for (uint256 i = 0; i < _args.inputNullifiers.length; i++) {
@@ -271,6 +271,12 @@ contract TornadoPool is MerkleTreeWithHistory, IERC20Receiver, ReentrancyGuard, 
     require(uint256(_args.extDataHash) == uint256(keccak256(abi.encode(_extData))) % FIELD_SIZE, "Incorrect external data hash");
     require(_args.publicAmount == calculatePublicAmount(_extData.extAmount, _extData.fee), "Invalid public amount");
     require(verifyProof(_args), "Invalid transaction proof");
+
+  }
+
+  function _transact(Proof memory _args, ExtData memory _extData) internal nonReentrant {
+
+    _preTransact(_args, _extData);
 
     for (uint256 i = 0; i < _args.inputNullifiers.length; i++) {
       nullifierHashes[_args.inputNullifiers[i]] = true;
