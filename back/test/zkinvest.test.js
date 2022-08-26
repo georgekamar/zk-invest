@@ -5,7 +5,7 @@ const { expect } = require('chai')
 const { utils, BigNumber } = ethers
 
 const Utxo = require('../src/utxo')
-const { createProject, transactionWithProject, acceptInvestment, transaction, registerAndTransact, prepareTransaction, buildMerkleTree } = require('../src/index')
+const { createProject, transactionWithProject, acceptInvestment, cancelInvestment, transaction, registerAndTransact, prepareTransaction, buildMerkleTree } = require('../src/index')
 const { toFixedHex, poseidonHash } = require('../src/utils')
 const { Keypair } = require('../src/keypair')
 const { encodeDataForBridge } = require('./utils')
@@ -16,7 +16,7 @@ const l1ChainId = 1
 const MAXIMUM_DEPOSIT_AMOUNT = utils.parseEther(process.env.MAXIMUM_DEPOSIT_AMOUNT || '1')
 
 describe('ZK Invest Tests', function () {
-  this.timeout(20000)
+  this.timeout(25000)
 
   async function deploy(contractName, ...args) {
     const Factory = await ethers.getContractFactory(contractName)
@@ -77,11 +77,11 @@ describe('ZK Invest Tests', function () {
     return { tornadoPool, token, proxy, omniBridge, amb, gov, multisig }
   }
 
-  it('Alice registers project -> Bob deposits from L1 -> Bob invests in Alice\'s Project -> Alice accepts Bob\'s investment', async () => {
+  it('Alice registers project with 1 token=0.01eth -> Bob deposits 0.1eth from L1 -> Bob invests 0.03eth in Alice\'s Project -> Alice accepts Bob\'s investment -> Bob receives 3 tokens -> Bob invests 0.02eth more -> Bob cancels his investment -> Alice tries to accept Bob\'s investment but fails -> Bob withdraws his remaining 0.07eth to the L1', async () => {
       // [assignment] complete code here
       let { tornadoPool, token, omniBridge } = await loadFixture(fixture)
       const sender = (await ethers.getSigners())[0]
-      try{
+
       const aliceKeypair = new Keypair() // contains private and public keys
       const aliceAddress = aliceKeypair.address();
 
@@ -102,25 +102,16 @@ describe('ZK Invest Tests', function () {
 
       const bobKeypair = new Keypair() // contains private and public keys
       const bobAddress = bobKeypair.address() // contains only public key
-      // const sender2 = (await ethers.getSigners())[1]
-      // tornadoPool = tornadoPool.connect(sender2);
-      // await createProject({
-      //   tornadoPool,
-      //   account: {
-      //     owner: sender2.address,
-      //     publicKey: bobKeypair.pubkey,
-      //   },
-      //   title: "The Bob Project",
-      //   description: "Bob's Project",
-      //   tokenValue: utils.parseEther('0.01')
-      // })
-      // Bob deposits into tornado pool
+
       const bobDepositAmount = utils.parseEther('0.1')
       const bobDepositUtxo = new Utxo({ amount: bobDepositAmount, keypair: bobKeypair })
+      // await transaction({ tornadoPool, inputs: [], outputs: [bobDepositUtxo] })
+
       const { args, extData } = await prepareTransaction({
         tornadoPool,
         outputs: [bobDepositUtxo],
       })
+
       const onTokenBridgedData = encodeDataForBridge({
         proof: args,
         extData,
@@ -153,6 +144,7 @@ describe('ZK Invest Tests', function () {
       let filter = tornadoPool.filters.NewPendingCommitment()
       let fromBlock = await ethers.provider.getBlock()
       let events = await tornadoPool.queryFilter(filter, fromBlock.number)
+
       let projectReceiveUtxo;
       try {
         projectReceiveUtxo = Utxo.decrypt(aliceKeypair, events[0].args.encryptedOutput, events[0].args.index)
@@ -161,6 +153,7 @@ describe('ZK Invest Tests', function () {
         projectReceiveUtxo = Utxo.decrypt(aliceKeypair, events[1].args.encryptedOutput, events[1].args.index)
       }
       expect(projectReceiveUtxo.amount).to.be.equal(projectSendAmount)
+
       // Alice accepts investment
       // const projectToken = await tornadoPool.projectTokens(await tornadoPool.projectOwnerToToken(utils.computeAddress(aliceKeypair.pubkey)));
       const projectToken = await tornadoPool.projectTokens(await tornadoPool.projectOwnerToToken(sender.address));
@@ -185,20 +178,92 @@ describe('ZK Invest Tests', function () {
       events = await tornadoPool.queryFilter(filter, fromBlock.number)
 
       let bobReceiveInvestmentTokenAmount = BigNumber.from(0);
+      let bobUtxos = [];
       events.forEach((event, i) => {
         try{
           let bobReceiveInvestmentTokensUtxo = Utxo.decrypt(bobKeypair, event.args.encryptedOutput, event.args.index);
+          bobUtxos.push(bobReceiveInvestmentTokensUtxo);
           if(bobReceiveInvestmentTokensUtxo.tokenId.eq(projectToken.id)){
             bobReceiveInvestmentTokenAmount = bobReceiveInvestmentTokenAmount.add(bobReceiveInvestmentTokensUtxo.amount);
           }
         }catch(e){
-          // console.log(i)
-          // console.log(e)
         }
       });
+
       // console.log(bobReceiveInvestmentTokensUtxo)
       expect(bobReceiveInvestmentTokenAmount.mul(projectToken.value)).to.be.equal(projectReceiveUtxo.amount)
-    }catch(e){console.log(e)}
+
+      // Bob invests again in Alice's project
+      const projectSendAmount2 = utils.parseEther('0.02')
+      const projectSendUtxo2 = new Utxo({ amount: projectSendAmount2, srcPubKey: bobKeypair.pubkey, srcEncryptionAddress: bobKeypair.address(), keypair: Keypair.fromString(aliceAddress) })
+      const bobChangeUtxo2 = new Utxo({
+        amount: bobChangeUtxo.amount.sub(projectSendAmount2),
+        keypair: bobDepositUtxo.keypair,
+      })
+
+      await transactionWithProject({ tornadoPool, inputs: [bobChangeUtxo], outputs: [projectSendUtxo2, bobChangeUtxo2] })
+      expect(bobChangeUtxo.amount).to.be.equal(bobChangeUtxo2.amount.add(projectSendAmount2))
+
+      // Bob parses chain to see his pending commitments
+      filter = tornadoPool.filters.NewPendingCommitment()
+      fromBlock = await ethers.provider.getBlock()
+      events = await tornadoPool.queryFilter(filter, fromBlock.number)
+      let bobPendingUtxos = [];
+      events.forEach((event, i) => {
+        try{
+          let bobPendingUtxo = Utxo.decrypt(bobKeypair, event.args.encryptedOutput, event.args.index);
+          bobPendingUtxos.push(bobPendingUtxo);
+        }catch(e){
+        }
+      });
+
+      // Bob decides to cancel his last investment before Alice accepts
+      await cancelInvestment({ tornadoPool, outputs: bobPendingUtxos});
+
+      // Alice parses chain and tries to accept investment but fails
+      let alicePendingUtxo;
+      events.forEach((event, i) => {
+        try{
+          alicePendingUtxo = Utxo.decrypt(aliceKeypair, event.args.encryptedOutput, event.args.index);
+        }catch(e){
+        }
+      });
+      const bobAcceptInvestmentUtxo2 = new Utxo({
+        amount: alicePendingUtxo.amount.div(projectToken.value),
+        tokenId: projectToken.id,
+        srcPubKey: aliceKeypair.pubkey,
+        srcEncryptionAddress: aliceKeypair.address(),
+        keypair: Keypair.fromString(alicePendingUtxo.srcEncryptionAddress)//{pubkey: projectReceiveUtxo.srcPubKey}
+      })
+
+      let isError = false;
+      try{
+        await acceptInvestment({
+          tornadoPool,
+          utxoReceived: alicePendingUtxo,
+          utxoSent: bobAcceptInvestmentUtxo2,
+          projectTokenValue: projectToken.value
+        })
+      }catch(e){
+        isError = true;
+      }
+      console.log(isError)
+      expect(isError).to.be.true;
+
+      // Bob withdraws all remaining funds from the shielded pool
+      const bobEthAddress = '0xfeDE000000000000000000000000000000000000'
+      const bobChangeUtxo3 = new Utxo({
+        amount: utils.parseEther('0.07'),
+        keypair: bobKeypair,
+      })
+      await transaction({
+        tornadoPool,
+        inputs: [bobChangeUtxo],
+        outputs: [bobChangeUtxo3],
+        recipient: bobEthAddress,
+        isL1Withdrawal: true,
+      })
+
       // let bobReceiveTokensUtxo;
       // try {
       //   bobReceiveTokensUtxo = Utxo.decrypt(aliceKeypair, events[0].args.encryptedOutput, events[0].args.index)

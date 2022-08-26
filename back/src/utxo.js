@@ -1,7 +1,10 @@
 const { ethers } = require('hardhat')
 const { BigNumber } = ethers
-const { randomBN, poseidonHash, poseidonHash2, toBuffer } = require('./utils')
+const { randomBN, poseidonHash, poseidonHash2, encryptUtxo } = require('./utils')
 const { Keypair } = require('./keypair')
+
+const EMPTY_PUB_ADDRESS = '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
+const EMPTY_PUB_KEY = '0x0000000000000000000000000000000000000000000000000000000000000000';
 
 class Utxo {
   /** Initialize a new UTXO - unspent transaction output or input. Note, a full TX consists of 2/16 inputs and 2 outputs
@@ -15,7 +18,8 @@ class Utxo {
    */
    //0x 8A791620dd6260079BF849Dc5567aDC3F2FdC318
    //0x 0000000000000000000000000000000000000000
-  constructor({ amount = 0, tokenId = 0, srcPubKey = BigNumber.from('0x' + '0000000000000000000000000000000000000000000000000000000000000000'), srcEncryptionAddress = '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000', keypair = new Keypair(), blinding = randomBN(), index = null } = {}) {
+
+  constructor({ amount = 0, tokenId = 0, srcPubKey = BigNumber.from(EMPTY_PUB_KEY), srcEncryptionAddress = EMPTY_PUB_ADDRESS, keypair = new Keypair(), blinding = randomBN(), index = null } = {}) {
     this.amount = BigNumber.from(amount)
     this.tokenId = BigNumber.from(tokenId)
     this.srcPubKey = BigNumber.from(srcPubKey)
@@ -65,15 +69,24 @@ class Utxo {
    * @returns {string} `0x`-prefixed hex string with data
    */
   encrypt() {
-    const bytes = Buffer.concat([
-      toBuffer(this.amount, 31),
-      toBuffer(this.tokenId, 31),
-      toBuffer(this.srcPubKey, 32),
-      toBuffer(this.srcEncryptionAddress, 64),
-      toBuffer(this.blinding, 31)
-    ])
-    return this.keypair.encrypt(bytes)
+    return encryptUtxo(
+      {
+        amount: this.amount,
+        tokenId: this.tokenId,
+        srcPubKey: this.srcPubKey,
+        srcEncryptionAddress: this.srcEncryptionAddress,
+        blinding: this.blinding
+      },
+      this.keypair
+    )
   }
+
+  // encrypt() {
+  //   return encryptUtxo(
+  //     this,
+  //     this.keypair
+  //   )
+  // }
 
   /**
    * Decrypt a UTXO
@@ -85,13 +98,16 @@ class Utxo {
    */
   static decrypt(keypair, data, index) {
     const buf = keypair.decrypt(data)
+    const destPubSliceString = buf.slice(189, 253).toString('hex');
+    const destPubAddress = destPubSliceString ? ('0x' + destPubSliceString) : null;
     return new Utxo({
       amount: BigNumber.from('0x' + buf.slice(0, 31).toString('hex')),
       tokenId: BigNumber.from('0x' + buf.slice(31, 62).toString('hex')),
       srcPubKey: BigNumber.from('0x' + buf.slice(62, 94).toString('hex')),
       srcEncryptionAddress: '0x' + buf.slice(94, 158).toString('hex'),
       blinding: BigNumber.from('0x' + buf.slice(158, 189).toString('hex')),
-      keypair,
+      destPubAddress,
+      keypair: destPubAddress ? Keypair.fromString(destPubAddress) : keypair,
       index,
     })
   }

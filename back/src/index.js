@@ -2,8 +2,9 @@
 const MerkleTree = require('fixed-merkle-tree')
 const { ethers } = require('hardhat')
 const { BigNumber } = ethers
-const { toFixedHex, poseidonHash2, getExtDataHash, FIELD_SIZE, shuffle } = require('./utils')
+const { toFixedHex, poseidonHash2, getExtDataHash, FIELD_SIZE, shuffle, encryptUtxo } = require('./utils')
 const Utxo = require('./utxo')
+const { Keypair } = require('./keypair')
 
 const { prove } = require('./prover')
 const MERKLE_TREE_HEIGHT = 5
@@ -99,6 +100,14 @@ async function getProof({
     l1Fee,
   }
 
+  let cancellable;
+  if(isInvestment){
+    cancellable = {
+      encryptedOutput1: encryptUtxo(outputs[0], Keypair.fromString(outputs[0].srcEncryptionAddress), outputs[0].keypair.address()),
+      encryptedOutput2: encryptUtxo(outputs[1], Keypair.fromString(outputs[1].srcEncryptionAddress), outputs[1].keypair.address())
+    }
+  }
+
   const extDataHash = getExtDataHash(extData)
   let input = {
     root: tree.root(),
@@ -134,11 +143,13 @@ async function getProof({
     publicAmount: toFixedHex(input.publicAmount),
     extDataHash: toFixedHex(extDataHash),
   }
+
   // console.log('Solidity args', args)
 
   return {
     extData,
     args,
+    cancellable
   }
 }
 
@@ -167,7 +178,7 @@ async function prepareTransaction({
     .add(outputs.reduce((sum, x) => sum.add(x.amount), BigNumber.from(0)))
     .sub(inputs.reduce((sum, x) => sum.add(x.amount), BigNumber.from(0)))
 
-  const { args, extData } = await getProof({
+  const { args, extData, cancellable } = await getProof({
     inputs,
     outputs,
     tree: await buildMerkleTree({ tornadoPool }),
@@ -183,6 +194,7 @@ async function prepareTransaction({
   return {
     args,
     extData,
+    cancellable
   }
 }
 
@@ -217,25 +229,15 @@ async function createProject({ tornadoPool, account, title, description, tokenVa
     await receipt.wait();
 }
 
-async function transactionWithProject({ tornadoPool, ...rest }) {
-  const { args, extData } = await prepareTransaction({
-    tornadoPool,
-    ...rest,
-  })
-
-  const receipt = await tornadoPool.transactWithProject(args, extData, {
-    gasLimit: 2e6,
-  })
-  return await receipt.wait()
-}
 
 async function transactionWithProject({ tornadoPool, ...rest }) {
-  const { args, extData } = await prepareTransaction({
+  const { args, extData, cancellable } = await prepareTransaction({
     tornadoPool,
     ...rest,
+    isInvestment: true
   })
 
-  const receipt = await tornadoPool.transactWithProject(args, extData, {
+  const receipt = await tornadoPool.transactWithProject(args, extData, cancellable, {
     gasLimit: 2e6,
   })
   return await receipt.wait()
@@ -248,17 +250,36 @@ async function acceptInvestment({ tornadoPool, utxoReceived, utxoSent, projectTo
     utxoSent,
     projectTokenValue
   })
-  let emptyUtxo = new Utxo({amount: 0});
-  const receipt = await tornadoPool.acceptInvestment(args, utxoSent.encrypt(), emptyUtxo.getCommitment(), {
+  let emptyUtxo = new Utxo();
+  let encryptedOutputs = {
+    encryptedOutput1: utxoSent.encrypt(),
+    encryptedOutput2: emptyUtxo.encrypt()
+  };
+
+  const receipt = await tornadoPool.acceptInvestment(args, encryptedOutputs, emptyUtxo.getCommitment(), {
     gasLimit: 2e6,
   })
   return await receipt.wait()
 }
 
+async function cancelInvestment({ tornadoPool, ...rest }) {
+  const { args } = await prepareTransaction({
+    tornadoPool,
+    ...rest,
+  })
+
+  const receipt = await tornadoPool.cancelInvestment(args, {
+    gasLimit: 2e6,
+  })
+  return await receipt.wait()
+}
+
+
 module.exports = {
   createProject,
   transactionWithProject,
   acceptInvestment,
+  cancelInvestment,
   transaction,
   registerAndTransact,
   prepareTransaction,

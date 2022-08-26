@@ -54,6 +54,11 @@ contract ZkInvest is TornadoPool {
     string description;
   }
 
+  struct EncryptedOutputs {
+    bytes encryptedOutput1;
+    bytes encryptedOutput2;
+  }
+
   event NewPendingCommitment(bytes32 commitment, bytes encryptedOutput);
 
   ProjectToken[] public projectTokens;
@@ -151,7 +156,13 @@ contract ZkInvest is TornadoPool {
   //   _transact(_args, _extData);
   // }
 
-  function transactWithProject(Proof memory _args, ExtData memory _extData) public nonReentrant {
+  function transactWithProject(Proof memory _args, ExtData memory _extData, EncryptedOutputs memory _cancellable) public nonReentrant {
+
+    // Logic for direct L1 investment requires adding token transfer
+    // commitment to the merkle tree first for its nullifier to be valid
+    // in the future and for pending project transaction to be cancellable
+    // comes down to making a depoist to L2 then making investment transaction
+    require(_extData.extAmount == 0, "Investment only possible from L2");
 
     _preTransact(_args, _extData);
 
@@ -167,6 +178,8 @@ contract ZkInvest is TornadoPool {
 
     emit NewPendingCommitment(_args.outputCommitments[0], _extData.encryptedOutput1);
     emit NewPendingCommitment(_args.outputCommitments[1], _extData.encryptedOutput2);
+    emit NewPendingCommitment(_args.outputCommitments[0], _cancellable.encryptedOutput1);
+    emit NewPendingCommitment(_args.outputCommitments[1], _cancellable.encryptedOutput2);
 
     // lastBalance = token.balanceOf(address(this));
     // _insert(_args.outputCommitments[0], _args.outputCommitments[1]);
@@ -178,27 +191,52 @@ contract ZkInvest is TornadoPool {
 
   }
 
-  function acceptInvestment(ProjectTokenTransferProof memory _args, bytes memory _encryptedOutput, bytes32 _emptyCommitment) public nonReentrant {
-    require(pendingCommitmentToCommitment[_args.commitmentReceived] != 0, "Pending commitment must still be pending");
+  function cancelInvestment(Proof memory _args) public {
+    require(isKnownRoot(_args.root), "Invalid merkle root");
+    require(pendingCommitmentToCommitment[_args.outputCommitments[0]] == _args.outputCommitments[1], "Pending commitment 1 must still be pending");
+    require(pendingCommitmentToCommitment[_args.outputCommitments[1]] == _args.outputCommitments[0], "Pending commitment 2 must still be pending");
+    for (uint256 i = 0; i < _args.inputNullifiers.length; i++) {
+      require(!isSpent(_args.inputNullifiers[i]), "Input already spent");
+    }
+    require(verifyProof(_args), "Invalid transaction proof");
+
+    bytes32[] memory investmentNullifiers = (pendingCommitmentToNullifiers[_args.outputCommitments[0]].length > 0) ? pendingCommitmentToNullifiers[_args.outputCommitments[0]] : pendingCommitmentToNullifiers[_args.outputCommitments[1]];
+
+    for (uint256 i = 0; i < investmentNullifiers.length; i++) {
+      delete pendingNullifierHashes[investmentNullifiers[i]];
+    }
+
+    delete pendingCommitmentToCommitment[_args.outputCommitments[0]];
+    delete pendingCommitmentToCommitment[_args.outputCommitments[1]];
+    delete pendingCommitmentToNullifiers[_args.outputCommitments[0]];
+    delete pendingCommitmentToNullifiers[_args.outputCommitments[1]];
+    delete pendingCommitmentToEncryptedOutput[_args.outputCommitments[0]];
+    delete pendingCommitmentToEncryptedOutput[_args.outputCommitments[1]];
+
+  }
+
+  function acceptInvestment(ProjectTokenTransferProof memory _args, EncryptedOutputs memory _encryptedOutputs, bytes32 _emptyCommitment) public nonReentrant {
+    require(pendingCommitmentToCommitment[_args.commitmentReceived] != bytes32(0x0), "Pending commitment must still be pending");
     require(_args.sentTokenId == projectOwnerToToken[msg.sender], "TokenId must be from project owner");
     require(_args.tokenValue == projectTokens[_args.sentTokenId].value, "Value of token must be same as advertized");
 
     require(verifyProjectTokenTransferProof(_args), "Invalid project token transfer proof");
 
     _insert(_args.commitmentSent, _emptyCommitment);
-    emit NewCommitment(_args.commitmentSent, nextIndex - 1, _encryptedOutput);
+    emit NewCommitment(_args.commitmentSent, nextIndex - 2, _encryptedOutputs.encryptedOutput1);
+    emit NewCommitment(_emptyCommitment, nextIndex - 1, _encryptedOutputs.encryptedOutput2);
 
-    bytes32[] memory investmentNullifiers = (pendingCommitmentToNullifiers[_args.commitmentReceived].length > 0) ? pendingCommitmentToNullifiers[_args.commitmentReceived] : pendingCommitmentToNullifiers[pendingCommitmentToCommitment[_args.commitmentReceived]];
+    bytes32 commitment1 = pendingCommitmentToCommitment[_args.commitmentReceived];
+    _insert(_args.commitmentReceived, commitment1);
+    emit NewCommitment(_args.commitmentReceived, nextIndex - 2, pendingCommitmentToEncryptedOutput[_args.commitmentReceived]);
+    emit NewCommitment(commitment1, nextIndex - 1, pendingCommitmentToEncryptedOutput[commitment1]);
+
+    bytes32[] memory investmentNullifiers = (pendingCommitmentToNullifiers[_args.commitmentReceived].length > 0) ? pendingCommitmentToNullifiers[_args.commitmentReceived] : pendingCommitmentToNullifiers[commitment1];
     for (uint256 i = 0; i < investmentNullifiers.length; i++) {
       nullifierHashes[investmentNullifiers[i]] = true;
       pendingNullifierHashes[investmentNullifiers[i]] = false;
       emit NewNullifier(investmentNullifiers[i]);
     }
-
-    bytes32 commitment1 = pendingCommitmentToCommitment[_args.commitmentReceived];
-    _insert(_args.commitmentReceived, commitment1);
-    emit NewCommitment(_args.commitmentReceived, nextIndex - 1, pendingCommitmentToEncryptedOutput[_args.commitmentReceived]);
-    emit NewCommitment(pendingCommitmentToCommitment[_args.commitmentReceived], nextIndex - 2, pendingCommitmentToEncryptedOutput[commitment1]);
 
     pendingCommitmentToCommitment[commitment1] = 0;
     pendingCommitmentToCommitment[_args.commitmentReceived] = 0;

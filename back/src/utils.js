@@ -97,6 +97,18 @@ async function getSignerFromAddress(address) {
   return await ethers.provider.getSigner(address)
 }
 
+function encryptUtxo(utxoData, keypair, destPubAddress) {
+  const bytes = Buffer.concat([
+    toBuffer(utxoData.amount, 31),
+    toBuffer(utxoData.tokenId, 31),
+    toBuffer(utxoData.srcPubKey, 32),
+    toBuffer(utxoData.srcEncryptionAddress, 64),
+    toBuffer(utxoData.blinding, 31),
+    ...(destPubAddress ? [toBuffer(destPubAddress, 64)] : [])
+  ])
+  return keypair.encrypt(bytes)
+}
+
 module.exports = {
   FIELD_SIZE,
   randomBN,
@@ -107,4 +119,5 @@ module.exports = {
   getExtDataHash,
   shuffle,
   getSignerFromAddress,
+  encryptUtxo
 }
