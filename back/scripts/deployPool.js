@@ -14,8 +14,23 @@ async function main() {
   // const l1Unwrapper = '0x8845F740F8B01bC7D9A4C82a6fD4A60320c07AF1' // WBNB -> BNB
   // const l1ChainId = 56
 
-  const token = '0x0';
-  const multisig = '0xE3611102E23a43136a13993E3a00BAD67da19119'
+  // WETH (Goerli)
+  const token = '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6';
+
+  const multisig = '0x8ECe2A05e0AdA6c70BA4a580EFf87f23D964723c'
+
+
+  // GOERLI Ethereum Testnet Deployment Addresses:
+  
+  // WETH token: 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6
+  // multisig: 0x8ECe2A05e0AdA6c70BA4a580EFf87f23D964723c
+  // verifier2: 0x55Ea1dbcD66B55Ca4a6B26bc9569C3dA16390471
+  // verifier16: 0x23BD33cba2fe2436416dF4CDF4687809b4503d6a
+  // projectTokenTransferVerifier: 0x827866C042a58F67b33BD0d9C9128eE7A307401D
+  // hasher: 0x2b1040c24a106913bBD3149981c07f1643fe93c4
+  // ownableERC1155: 0x3D08c0C140B366281DF2609689F929079DA18E95
+  // ZK Invest implementation address: 0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d
+
 
   const Verifier2 = await ethers.getContractFactory('Verifier2')
   const verifier2 = await Verifier2.deploy()
@@ -37,12 +52,12 @@ async function main() {
   await hasher.deployed()
   console.log(`hasher: ${hasher.address}`)
 
+  const tokensUri = 'https://zk-invest.vercel.app/project-tokens-erc1155-metadata.json';
+
   const OwnableERC1155 = await await ethers.getContractFactory('OwnableERC1155')
-  const ownableERC1155 = await OwnableERC1155.deploy()
+  const ownableERC1155 = await OwnableERC1155.deploy(tokensUri)
   await ownableERC1155.deployed()
   console.log(`ownableERC1155: ${ownableERC1155.address}`)
-
-  // const tokensUri = 'https://speedtest.net';
 
   const Pool = await ethers.getContractFactory('ZkInvest')
   console.log(
@@ -85,7 +100,7 @@ async function main() {
   console.log(`ZK Invest implementation address: ${zkInvest.address}`)
 
 
-  projectTokensContract.changeOwner(zkInvest.address);
+  ownableERC1155.changeOwner(zkInvest.address);
 
   // const CrossChainUpgradeableProxy = await ethers.getContractFactory('CrossChainUpgradeableProxy')
   // const proxy = await CrossChainUpgradeableProxy.deploy(tornadoImpl.address, govAddress, [], amb, l1ChainId)
