@@ -23,6 +23,7 @@ template Transaction(levels, nIns, nOuts, zeroLeaf) {
     // correct extAmount range is enforced on the smart contract
     // publicAmount = extAmount - fee
     signal input publicAmount;
+    signal input publicTokenId;
     signal input extDataHash;
 
     // data for transaction inputs
@@ -54,14 +55,14 @@ template Transaction(levels, nIns, nOuts, zeroLeaf) {
 
     // make sure the nature of the token is the same
 
-    for (var i = 0; i < nIns - 1; i++) {
-        inTokenId[i] === inTokenId[i+1];
+    for (var i = 0; i < nIns; i++) {
+        inTokenId[i] === publicTokenId;
     }
-    if(nOuts > 0 && nIns > 0){
-      inTokenId[nIns-1] === outTokenId[0];
-    }
-    for (var j = 0; j < nOuts-1; j++) {
-        outTokenId[j] === outTokenId[j+1];
+    // if(nOuts > 0 && nIns > 0){
+    //   inTokenId[nIns-1] === outTokenId[0];
+    // }
+    for (var j = 0; j < nOuts; j++) {
+        outTokenId[j] === publicTokenId;
     }
 
     // verify correctness of transaction inputs

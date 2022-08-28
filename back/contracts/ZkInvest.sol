@@ -14,7 +14,7 @@ pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+
 import "./TornadoPool.sol";
 
 import { IVerifier } from "./interfaces/IVerifier.sol";
@@ -26,7 +26,6 @@ contract ZkInvest is TornadoPool {
 
   // mapping from project owner to project token (for existence)
   mapping(address => uint256) public projectOwnerToToken;
-  mapping(uint256 => address) public projectTokenToOwner;
   mapping(bytes32 => bytes32[]) public pendingCommitmentToNullifiers;
   mapping(bytes32 => bytes32) public pendingCommitmentToCommitment;
   mapping(bytes32 => bytes) public pendingCommitmentToEncryptedOutput;
@@ -60,6 +59,7 @@ contract ZkInvest is TornadoPool {
   }
 
   event NewPendingCommitment(bytes32 commitment, bytes encryptedOutput);
+  event NewProjectCreated(bytes creator, uint256 tokenId, string title, string description);
 
   ProjectToken[] public projectTokens;
   Project[] public projects;
@@ -70,29 +70,25 @@ contract ZkInvest is TornadoPool {
     @param _levels hight of the commitments merkle tree
     @param _hasher hasher address for the merkle tree
     @param _token token address for the pool
-    @param _omniBridge omniBridge address for specified token
-    @param _l1Unwrapper address of the L1Helper
-    @param _governance owner address
-    @param _l1ChainId chain id of L1
+    @param _projectTokensContract ERC1155 tokens for the pool
     @param _multisig multisig on L2
   */
   constructor(
     IVerifier[3] memory _verifiers,
     uint32 _levels,
     address _hasher,
-    IERC6777 _token,
-    address _omniBridge,
-    address _l1Unwrapper,
-    address _governance,
-    uint256 _l1ChainId,
+    IERC20 _token,
+    AbstractERC1155 _projectTokensContract,
+    // address _omniBridge,
+    // address _l1Unwrapper,
+    // address _governance,
+    // uint256 _l1ChainId,
     address _multisig
-    // string memory _tokensUri
   )
-    TornadoPool(_verifiers[0], _verifiers[1], _levels, _hasher, _token, _omniBridge, _l1Unwrapper, _governance, _l1ChainId, _multisig)
-    // ERC1155(_tokensUri)
+    TornadoPool(_verifiers[0], _verifiers[1], _levels, _hasher, _token, _projectTokensContract, _multisig)
   {
     projectTokenTransferVerifier = _verifiers[2];
-    _initializeProjects();
+    // _initializeProjects();
   }
 
 
@@ -111,6 +107,7 @@ contract ZkInvest is TornadoPool {
 
   function _initializeProjects() internal {
     if(projects.length == 0){
+      projectTokensContract.mint(address(this), 0, 0, "");
       projectTokens.push(ProjectToken(0, 0));
       projects.push(Project(Account(address(this), ""), 0, "Reserved", "none"));
       projectTokenToOwner[0] = address(this);
@@ -128,10 +125,12 @@ contract ZkInvest is TornadoPool {
     _initializeProjects();
     // create new token type here
     uint256 newProjectTokenId = projectTokens.length;
+    projectTokensContract.mint(address(this), newProjectTokenId, 0, "");
     projectTokenToOwner[newProjectTokenId] = _account.owner;
     projectOwnerToToken[_account.owner] = newProjectTokenId;
     projectTokens.push(ProjectToken(newProjectTokenId, _tokenValue));
     projects.push(Project(_account, newProjectTokenId, _title, _description));
+    NewProjectCreated(_account.publicKey, newProjectTokenId, _title, _description);
   }
 
   function verifyProjectTokenTransferProof(ProjectTokenTransferProof memory _args) public view returns (bool) {
@@ -158,11 +157,11 @@ contract ZkInvest is TornadoPool {
 
   function transactWithProject(Proof memory _args, ExtData memory _extData, EncryptedOutputs memory _cancellable) public nonReentrant {
 
-    // Logic for direct L1 investment requires adding token transfer
+    // Logic for direct investment requires adding token transfer
     // commitment to the merkle tree first for its nullifier to be valid
     // in the future and for pending project transaction to be cancellable
-    // comes down to making a depoist to L2 then making investment transaction
-    require(_extData.extAmount == 0, "Investment only possible from L2");
+    // comes down to making a deposit to pool then making investment transaction
+    require(_extData.extAmount == 0, "Investment only possible from shielded pool");
 
     _preTransact(_args, _extData);
 

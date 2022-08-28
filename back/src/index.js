@@ -63,10 +63,9 @@ async function getProof({
   tree,
   extAmount,
   fee,
+  publicTokenId,
   recipient,
   relayer,
-  isL1Withdrawal,
-  l1Fee,
   isInvestment
 }) {
   inputs = shuffle(inputs)
@@ -92,12 +91,13 @@ async function getProof({
   const extData = {
     recipient: toFixedHex(recipient, 20),
     extAmount: toFixedHex(extAmount),
+    publicTokenId: toFixedHex(publicTokenId),
     relayer: toFixedHex(relayer, 20),
     fee: toFixedHex(fee),
     encryptedOutput1: outputs[0].encrypt(),
     encryptedOutput2: outputs[1].encrypt(),
-    isL1Withdrawal,
-    l1Fee,
+    // isL1Withdrawal,
+    // l1Fee,
   }
 
   let cancellable;
@@ -114,6 +114,7 @@ async function getProof({
     inputNullifier: inputs.map((x) => x.getNullifier()),
     outputCommitment: outputs.map((x) => x.getCommitment()),
     publicAmount: BigNumber.from(extAmount).sub(fee).add(FIELD_SIZE).mod(FIELD_SIZE).toString(),
+    publicTokenId,
     extDataHash,
 
     // data for 2 transaction inputs
@@ -141,10 +142,9 @@ async function getProof({
     inputNullifiers: inputs.map((x) => toFixedHex(x.getNullifier())),
     outputCommitments: outputs.map((x) => toFixedHex(x.getCommitment())),
     publicAmount: toFixedHex(input.publicAmount),
+    publicTokenId: toFixedHex(publicTokenId),
     extDataHash: toFixedHex(extDataHash),
   }
-
-  // console.log('Solidity args', args)
 
   return {
     extData,
@@ -160,18 +160,19 @@ async function prepareTransaction({
   fee = 0,
   recipient = 0,
   relayer = 0,
-  isL1Withdrawal = false,
-  l1Fee = 0,
   isInvestment = false
 }) {
+
+  let publicTokenId = (inputs?.length > 0) ? inputs[0].tokenId : outputs[0].tokenId;
+
   if (inputs.length > 16 || outputs.length > 2) {
     throw new Error('Incorrect inputs/outputs count')
   }
   while (inputs.length !== 2 && inputs.length < 16) {
-    inputs.push(new Utxo())
+    inputs.push(new Utxo({tokenId: publicTokenId}))
   }
   while (outputs.length < 2) {
-    outputs.push(new Utxo())
+    outputs.push(new Utxo({tokenId: publicTokenId}))
   }
 
   let extAmount = BigNumber.from(fee)
@@ -184,10 +185,9 @@ async function prepareTransaction({
     tree: await buildMerkleTree({ tornadoPool }),
     extAmount,
     fee,
+    publicTokenId,
     recipient,
     relayer,
-    isL1Withdrawal,
-    l1Fee,
     isInvestment
   })
 
@@ -207,6 +207,7 @@ async function transaction({ tornadoPool, ...rest }) {
   const receipt = await tornadoPool.transact(args, extData, {
     gasLimit: 2e6,
   })
+
   return await receipt.wait()
 }
 

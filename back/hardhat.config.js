@@ -51,7 +51,7 @@ const config = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 1,
             details: {
               yul: true,
               yulDetails: {
