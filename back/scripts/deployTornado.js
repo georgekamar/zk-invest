@@ -10,9 +10,11 @@ async function main() {
   // const govAddress = '0xBAE5aBfa98466Dbe68836763B087f2d189f4D28f'
   // const omniBridge = '0x59447362798334d3485c64D1e4870Fde2DDC0d75'
   // const amb = '0x162e898bd0aacb578c8d5f8d6ca588c13d2a383f'
-  const token = '0xCa8d20f3e0144a72C6B5d576e9Bd3Fd8557E2B04' // WBNB
+  // const token = '0xCa8d20f3e0144a72C6B5d576e9Bd3Fd8557E2B04' // WBNB
   // const l1Unwrapper = '0x8845F740F8B01bC7D9A4C82a6fD4A60320c07AF1' // WBNB -> BNB
   // const l1ChainId = 56
+
+  const token = '0x0';
   const multisig = '0xE3611102E23a43136a13993E3a00BAD67da19119'
 
   const Verifier2 = await ethers.getContractFactory('Verifier2')

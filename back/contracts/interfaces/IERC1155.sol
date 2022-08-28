@@ -43,4 +43,10 @@ abstract contract AbstractERC1155 is IERC1155 {
     _performMint(_account, _id, _amount, _data);
   }
 
+  function _performSetURI(string memory _newUri) internal virtual;
+
+  function setURI(string memory _newUri) onlyOwner public {
+    _performSetURI(_newUri);
+  }
+
 }

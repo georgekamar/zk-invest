@@ -9,9 +9,9 @@ const { Keypair } = require('./keypair')
 const { prove } = require('./prover')
 const MERKLE_TREE_HEIGHT = 5
 
-async function buildMerkleTree({ tornadoPool }) {
-  const filter = tornadoPool.filters.NewCommitment()
-  const events = await tornadoPool.queryFilter(filter, 0)
+async function buildMerkleTree({ zkInvest }) {
+  const filter = zkInvest.filters.NewCommitment()
+  const events = await zkInvest.queryFilter(filter, 0)
 
   const leaves = events.sort((a, b) => a.args.index - b.args.index).map((e) => toFixedHex(e.args.commitment))
   return new MerkleTree(MERKLE_TREE_HEIGHT, leaves, { hashFunction: poseidonHash2 })
@@ -154,7 +154,7 @@ async function getProof({
 }
 
 async function prepareTransaction({
-  tornadoPool,
+  zkInvest,
   inputs = [],
   outputs = [],
   fee = 0,
@@ -182,7 +182,7 @@ async function prepareTransaction({
   const { args, extData, cancellable } = await getProof({
     inputs,
     outputs,
-    tree: await buildMerkleTree({ tornadoPool }),
+    tree: await buildMerkleTree({ zkInvest }),
     extAmount,
     fee,
     publicTokenId,
@@ -198,55 +198,55 @@ async function prepareTransaction({
   }
 }
 
-async function transaction({ tornadoPool, ...rest }) {
+async function transaction({ zkInvest, ...rest }) {
   const { args, extData } = await prepareTransaction({
-    tornadoPool,
+    zkInvest,
     ...rest,
   })
 
-  const receipt = await tornadoPool.transact(args, extData, {
+  const receipt = await zkInvest.transact(args, extData, {
     gasLimit: 2e6,
   })
 
   return await receipt.wait()
 }
 
-async function registerAndTransact({ tornadoPool, account, ...rest }) {
+async function registerAndTransact({ zkInvest, account, ...rest }) {
   const { args, extData } = await prepareTransaction({
-    tornadoPool,
+    zkInvest,
     ...rest,
   })
 
-  const receipt = await tornadoPool.registerAndTransact(account, args, extData, {
+  const receipt = await zkInvest.registerAndTransact(account, args, extData, {
     gasLimit: 2e6,
   })
   await receipt.wait()
 }
 
-async function createProject({ tornadoPool, account, title, description, tokenValue }) {
-    const receipt = await tornadoPool.createProject(account, title, description, tokenValue, {
+async function createProject({ zkInvest, account, title, description, tokenValue }) {
+    const receipt = await zkInvest.createProject(account, title, description, tokenValue, {
       gasLimit: 2e6
     });
     await receipt.wait();
 }
 
 
-async function transactionWithProject({ tornadoPool, ...rest }) {
+async function transactionWithProject({ zkInvest, ...rest }) {
   const { args, extData, cancellable } = await prepareTransaction({
-    tornadoPool,
+    zkInvest,
     ...rest,
     isInvestment: true
   })
 
-  const receipt = await tornadoPool.transactWithProject(args, extData, cancellable, {
+  const receipt = await zkInvest.transactWithProject(args, extData, cancellable, {
     gasLimit: 2e6,
   })
   return await receipt.wait()
 }
 
-async function acceptInvestment({ tornadoPool, utxoReceived, utxoSent, projectTokenValue }) {
+async function acceptInvestment({ zkInvest, utxoReceived, utxoSent, projectTokenValue }) {
   const { args } = await getProjectTokenTransferProof({
-    tornadoPool,
+    zkInvest,
     utxoReceived,
     utxoSent,
     projectTokenValue
@@ -257,19 +257,19 @@ async function acceptInvestment({ tornadoPool, utxoReceived, utxoSent, projectTo
     encryptedOutput2: emptyUtxo.encrypt()
   };
 
-  const receipt = await tornadoPool.acceptInvestment(args, encryptedOutputs, emptyUtxo.getCommitment(), {
+  const receipt = await zkInvest.acceptInvestment(args, encryptedOutputs, emptyUtxo.getCommitment(), {
     gasLimit: 2e6,
   })
   return await receipt.wait()
 }
 
-async function cancelInvestment({ tornadoPool, ...rest }) {
+async function cancelInvestment({ zkInvest, ...rest }) {
   const { args } = await prepareTransaction({
-    tornadoPool,
+    zkInvest,
     ...rest,
   })
 
-  const receipt = await tornadoPool.cancelInvestment(args, {
+  const receipt = await zkInvest.cancelInvestment(args, {
     gasLimit: 2e6,
   })
   return await receipt.wait()

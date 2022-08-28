@@ -173,6 +173,7 @@ contract TornadoPool is MerkleTreeWithHistory, ReentrancyGuard, IERC1155Receiver
   // }
 
   function onERC1155Received(address, address, uint256, uint256 value, bytes memory) public override pure returns (bytes4) {
+    // Since project token deposit is not implemented, prevent non 0 amounts to be sent to address
     if(value == 0){
       return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }else{
@@ -181,6 +182,7 @@ contract TornadoPool is MerkleTreeWithHistory, ReentrancyGuard, IERC1155Receiver
   }
 
   function onERC1155BatchReceived(address, address, uint256[] memory, uint256[] memory values, bytes memory) public override pure returns (bytes4) {
+    // Since project token deposit is not implemented, prevent non 0 amounts to be sent to address
     bool valuesAreZero = true;
     for(uint256 i = 0; i < values.length; i++){
       if(values[i] != 0){
@@ -225,6 +227,10 @@ contract TornadoPool is MerkleTreeWithHistory, ReentrancyGuard, IERC1155Receiver
 
   function configureLimits(uint256 _maximumDepositAmount) public onlyMultisig {
     _configureLimits(_maximumDepositAmount);
+  }
+
+  function setProjectTokensURI(string memory _newUri) public onlyMultisig {
+    projectTokensContract.setURI(_newUri);
   }
 
   function calculatePublicAmount(int256 _extAmount, uint256 _fee) public pure returns (uint256) {

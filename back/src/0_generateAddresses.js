@@ -4,18 +4,18 @@ const defaultConfig = require('../config')
 async function generate(config = defaultConfig) {
   const singletonFactory = await ethers.getContractAt('SingletonFactory', config.singletonFactory)
 
-  const UnwrapperFactory = await ethers.getContractFactory('L1Unwrapper')
-  const deploymentBytecodeUnwrapper =
-    UnwrapperFactory.bytecode +
-    UnwrapperFactory.interface.encodeDeploy([config.omniBridge, config.weth, config.multisig]).slice(2)
+  // const UnwrapperFactory = await ethers.getContractFactory('L1Unwrapper')
+  // const deploymentBytecodeUnwrapper =
+  //   UnwrapperFactory.bytecode +
+  //   UnwrapperFactory.interface.encodeDeploy([config.omniBridge, config.weth, config.multisig]).slice(2)
+  //
+  // const unwrapperAddress = ethers.utils.getCreate2Address(
+  //   singletonFactory.address,
+  //   config.salt,
+  //   ethers.utils.keccak256(deploymentBytecodeUnwrapper),
+  // )
 
-  const unwrapperAddress = ethers.utils.getCreate2Address(
-    singletonFactory.address,
-    config.salt,
-    ethers.utils.keccak256(deploymentBytecodeUnwrapper),
-  )
-
-  const PoolFactory = await ethers.getContractFactory('TornadoPool')
+  const PoolFactory = await ethers.getContractFactory('ZkInvest')
   const deploymentBytecodePool =
     PoolFactory.bytecode +
     PoolFactory.interface
@@ -40,11 +40,11 @@ async function generate(config = defaultConfig) {
   )
 
   const result = {
-    unwrapperContract: {
-      address: unwrapperAddress,
-      bytecode: deploymentBytecodeUnwrapper,
-      isProxy: false,
-    },
+    // unwrapperContract: {
+    //   address: unwrapperAddress,
+    //   bytecode: deploymentBytecodeUnwrapper,
+    //   isProxy: false,
+    // },
     poolContract: {
       address: poolAddress,
       bytecode: deploymentBytecodePool,
@@ -57,7 +57,7 @@ async function generate(config = defaultConfig) {
 
 async function generateWithLog() {
   const contracts = await generate()
-  console.log('L1 unwrapper contract: ', contracts.unwrapperContract.address)
+  // console.log('L1 unwrapper contract: ', contracts.unwrapperContract.address)
   console.log('Upgraded pool contract: ', contracts.poolContract.address)
   return contracts
 }

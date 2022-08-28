@@ -84,6 +84,14 @@ const config = {
     //         mnemonic: 'test test test test test test test test test test test junk',
     //       },
     // },
+    harmony_devnet: {
+      url: process.env.HARMONY_DEVNET_RPC || 'https://api.s0.ps.hmny.io/',
+      accounts: process.env.PRIVATE_KEY
+        ? [process.env.PRIVATE_KEY]
+        : {
+            mnemonic: 'test test test test test test test test test test test junk',
+          }
+    },
     xdai: {
       url: process.env.ETH_RPC || 'https://rpc.xdaichain.com/',
       accounts: process.env.PRIVATE_KEY

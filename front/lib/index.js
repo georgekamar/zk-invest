@@ -9,9 +9,9 @@ const { Keypair } = require('./keypair')
 const { prove } = require('./prover')
 const MERKLE_TREE_HEIGHT = 5
 
-async function buildMerkleTree({ tornadoPool }) {
-  const filter = tornadoPool.filters.NewCommitment()
-  const events = await tornadoPool.queryFilter(filter, 0)
+async function buildMerkleTree({ zkInvest }) {
+  const filter = zkInvest.filters.NewCommitment()
+  const events = await zkInvest.queryFilter(filter, 0)
 
   const leaves = events.sort((a, b) => a.args.index - b.args.index).map((e) => toFixedHex(e.args.commitment))
   return new MerkleTree(MERKLE_TREE_HEIGHT, leaves, { hashFunction: poseidonHash2 })
@@ -63,10 +63,9 @@ async function getProof({
   tree,
   extAmount,
   fee,
+  publicTokenId,
   recipient,
   relayer,
-  isL1Withdrawal,
-  l1Fee,
   isInvestment
 }) {
   inputs = shuffle(inputs)
@@ -92,12 +91,13 @@ async function getProof({
   const extData = {
     recipient: toFixedHex(recipient, 20),
     extAmount: toFixedHex(extAmount),
+    publicTokenId: toFixedHex(publicTokenId),
     relayer: toFixedHex(relayer, 20),
     fee: toFixedHex(fee),
     encryptedOutput1: outputs[0].encrypt(),
     encryptedOutput2: outputs[1].encrypt(),
-    isL1Withdrawal,
-    l1Fee,
+    // isL1Withdrawal,
+    // l1Fee,
   }
 
   let cancellable;
@@ -114,6 +114,7 @@ async function getProof({
     inputNullifier: inputs.map((x) => x.getNullifier()),
     outputCommitment: outputs.map((x) => x.getCommitment()),
     publicAmount: BigNumber.from(extAmount).sub(fee).add(FIELD_SIZE).mod(FIELD_SIZE).toString(),
+    publicTokenId,
     extDataHash,
 
     // data for 2 transaction inputs
@@ -141,10 +142,9 @@ async function getProof({
     inputNullifiers: inputs.map((x) => toFixedHex(x.getNullifier())),
     outputCommitments: outputs.map((x) => toFixedHex(x.getCommitment())),
     publicAmount: toFixedHex(input.publicAmount),
+    publicTokenId: toFixedHex(publicTokenId),
     extDataHash: toFixedHex(extDataHash),
   }
-
-  // console.log('Solidity args', args)
 
   return {
     extData,
@@ -154,24 +154,25 @@ async function getProof({
 }
 
 async function prepareTransaction({
-  tornadoPool,
+  zkInvest,
   inputs = [],
   outputs = [],
   fee = 0,
   recipient = 0,
   relayer = 0,
-  isL1Withdrawal = false,
-  l1Fee = 0,
   isInvestment = false
 }) {
+
+  let publicTokenId = (inputs?.length > 0) ? inputs[0].tokenId : outputs[0].tokenId;
+
   if (inputs.length > 16 || outputs.length > 2) {
     throw new Error('Incorrect inputs/outputs count')
   }
   while (inputs.length !== 2 && inputs.length < 16) {
-    inputs.push(new Utxo())
+    inputs.push(new Utxo({tokenId: publicTokenId}))
   }
   while (outputs.length < 2) {
-    outputs.push(new Utxo())
+    outputs.push(new Utxo({tokenId: publicTokenId}))
   }
 
   let extAmount = BigNumber.from(fee)
@@ -181,13 +182,12 @@ async function prepareTransaction({
   const { args, extData, cancellable } = await getProof({
     inputs,
     outputs,
-    tree: await buildMerkleTree({ tornadoPool }),
+    tree: await buildMerkleTree({ zkInvest }),
     extAmount,
     fee,
+    publicTokenId,
     recipient,
     relayer,
-    isL1Withdrawal,
-    l1Fee,
     isInvestment
   })
 
@@ -198,54 +198,55 @@ async function prepareTransaction({
   }
 }
 
-async function transaction({ tornadoPool, ...rest }) {
+async function transaction({ zkInvest, ...rest }) {
   const { args, extData } = await prepareTransaction({
-    tornadoPool,
+    zkInvest,
     ...rest,
   })
 
-  const receipt = await tornadoPool.transact(args, extData, {
+  const receipt = await zkInvest.transact(args, extData, {
     gasLimit: 2e6,
   })
+
   return await receipt.wait()
 }
 
-async function registerAndTransact({ tornadoPool, account, ...rest }) {
+async function registerAndTransact({ zkInvest, account, ...rest }) {
   const { args, extData } = await prepareTransaction({
-    tornadoPool,
+    zkInvest,
     ...rest,
   })
 
-  const receipt = await tornadoPool.registerAndTransact(account, args, extData, {
+  const receipt = await zkInvest.registerAndTransact(account, args, extData, {
     gasLimit: 2e6,
   })
   await receipt.wait()
 }
 
-async function createProject({ tornadoPool, account, title, description, tokenValue }) {
-    const receipt = await tornadoPool.createProject(account, title, description, tokenValue, {
+async function createProject({ zkInvest, account, title, description, tokenValue }) {
+    const receipt = await zkInvest.createProject(account, title, description, tokenValue, {
       gasLimit: 2e6
     });
     await receipt.wait();
 }
 
 
-async function transactionWithProject({ tornadoPool, ...rest }) {
+async function transactionWithProject({ zkInvest, ...rest }) {
   const { args, extData, cancellable } = await prepareTransaction({
-    tornadoPool,
+    zkInvest,
     ...rest,
     isInvestment: true
   })
 
-  const receipt = await tornadoPool.transactWithProject(args, extData, cancellable, {
+  const receipt = await zkInvest.transactWithProject(args, extData, cancellable, {
     gasLimit: 2e6,
   })
   return await receipt.wait()
 }
 
-async function acceptInvestment({ tornadoPool, utxoReceived, utxoSent, projectTokenValue }) {
+async function acceptInvestment({ zkInvest, utxoReceived, utxoSent, projectTokenValue }) {
   const { args } = await getProjectTokenTransferProof({
-    tornadoPool,
+    zkInvest,
     utxoReceived,
     utxoSent,
     projectTokenValue
@@ -256,19 +257,19 @@ async function acceptInvestment({ tornadoPool, utxoReceived, utxoSent, projectTo
     encryptedOutput2: emptyUtxo.encrypt()
   };
 
-  const receipt = await tornadoPool.acceptInvestment(args, encryptedOutputs, emptyUtxo.getCommitment(), {
+  const receipt = await zkInvest.acceptInvestment(args, encryptedOutputs, emptyUtxo.getCommitment(), {
     gasLimit: 2e6,
   })
   return await receipt.wait()
 }
 
-async function cancelInvestment({ tornadoPool, ...rest }) {
+async function cancelInvestment({ zkInvest, ...rest }) {
   const { args } = await prepareTransaction({
-    tornadoPool,
+    zkInvest,
     ...rest,
   })
 
-  const receipt = await tornadoPool.cancelInvestment(args, {
+  const receipt = await zkInvest.cancelInvestment(args, {
     gasLimit: 2e6,
   })
   return await receipt.wait()

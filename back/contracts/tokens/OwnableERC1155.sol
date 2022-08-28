@@ -23,5 +23,8 @@ contract OwnableERC1155 is ERC1155, AbstractERC1155 {
     _mint(_account, _id, _amount, _data);
   }
 
+  function _performSetURI(string memory _newUri) internal override {
+    _setURI(_newUri);
+  }
 
 }
