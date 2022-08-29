@@ -109,7 +109,7 @@ async function getProof({
 
   const extDataHash = getExtDataHash(extData)
   let input = {
-    root: tree.root(),
+    root: tree.root,
     inputNullifier: inputs.map((x) => x.getNullifier()),
     outputCommitment: outputs.map((x) => x.getCommitment()),
     publicAmount: BigNumber.from(extAmount).sub(fee).add(FIELD_SIZE).mod(FIELD_SIZE).toString(),

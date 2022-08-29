@@ -7,16 +7,18 @@ export default function RegistrationPopup(props){
   const privateKey = props?.privateKey;
 
   return (
-    <div className={styles.popupContainer}>
-      <Typography color='black'>This is your ZK Invest private key, store it somewhere safe in case you need to recover your funds</Typography>
-      <Typography color='black'>{privateKey}</Typography>
-      <Button
-        variant='contained'
-        size='small'
-        onClick={props?.handleConfirmation}
-      >
-        I stored my key safely
-      </Button>
+    <div className={styles.popupContainerContainer}>
+      <div className={styles.popupContainer}>
+        <Typography color='black'>This is your ZK Invest private key, store it somewhere safe in case you need to recover your funds</Typography>
+        <Typography color='black'>{privateKey}</Typography>
+        <Button
+          variant='contained'
+          size='small'
+          onClick={props?.handleConfirmation}
+        >
+          I stored my key safely
+        </Button>
+      </div>
     </div>
   )
 

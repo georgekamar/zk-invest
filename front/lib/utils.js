@@ -1,5 +1,5 @@
 /* global network */
-import crypto from 'crypto-browserify';
+import crypto from 'crypto';
 import { BigNumber, utils, provider } from 'ethers';
 import { poseidon } from 'circomlib';
 
@@ -109,6 +109,67 @@ function encryptUtxo(utxoData, keypair, destPubAddress) {
   return keypair.encrypt(bytes)
 }
 
+function calculateBalances(utxos){
+  let balances = {};
+  for(utxo in utxos){
+    let tokenId = utxo.tokenId.toString();
+    if(balances?.[tokenId]){
+      balances[tokenId] = balances[tokenId].add(utxo.amount);
+    }else{
+      balances[tokenId] = utxo.amount;
+    }
+  }
+  return balances;
+}
+
+function addBalances(balances1, balances2){
+  let newBalances = {};
+  for(tokenId in Object.keys(balances1)){
+    if(balances2?.[tokenId]){
+      newBalances[tokenId] = balances1[tokenId].add(balances2[tokenId]);
+    }else{
+      newBalances[tokenId] = balances1[tokenId];
+    }
+  }
+  for(tokenId in Object.keys(balances2)){
+    if(!newBalances?.[tokenId]){
+      newBalances[tokenId] = balances2[tokenId];
+    }
+  }
+  return newBalances;
+}
+
+function subBalances(balances1, balances2){
+  let newBalances = {};
+  for(tokenId in Object.keys(balances1)){
+    if(balances2?.[tokenId]){
+      newBalances[tokenId] = balances1[tokenId].sub(balances2[tokenId]);
+    }else{
+      newBalances[tokenId] = balances1[tokenId];
+    }
+  }
+  for(tokenId in Object.keys(balances2)){
+    if(!newBalances?.[tokenId]){
+      newBalances[tokenId] = balances2[tokenId].mul(BigNumber.from(-1));
+    }
+  }
+  return newBalances;
+}
+
+function utxosToNullify(utxos, amount){
+  let toNullify = [];
+  let balance = BigNumber.from(0);
+  const sortedUtxos = utxos.sort((a, b) => b.amount.sub(a));
+  for(utxo in sortedUtxos){
+    balance = balance.add(utxo.amount);
+    toNullify.push(utxo);
+    if(balance.gte(BigNumber.from(amount))){
+      break;
+    }
+  }
+  return toNullify;
+}
+
 module.exports = {
   FIELD_SIZE,
   randomBN,
@@ -119,5 +180,9 @@ module.exports = {
   getExtDataHash,
   shuffle,
   getSignerFromAddress,
-  encryptUtxo
+  encryptUtxo,
+  calculateBalances,
+  addBalances,
+  subBalances,
+  utxosToNullify
 }
