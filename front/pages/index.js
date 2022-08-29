@@ -37,6 +37,7 @@ export default function Home() {
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountError, setAccountError] = useState(null);
   const [account, setAccount] = useState(null);
+  const [myProject, setMyProject] = useState(null);
 
   const [accountConnectWaiting, setAccountConnectWaiting] = useState(false);
   const [accountRegistrationLoading, setAccountRegistrationLoading] = useState(false);
@@ -60,7 +61,8 @@ export default function Home() {
     let projectsFilter = zkInvest.filters.NewProjectCreated();
     zkInvest.queryFilter(projectsFilter)
     .then((events) => {
-      setProjects(events);
+      const tempProjects = events?.map(event => event?.args);
+      setProjects(tempProjects);
     })
     .catch((error) => {
       setProjectsError('There was an error loading existing projects');
@@ -71,7 +73,9 @@ export default function Home() {
 
   }
 
+  const handleCreateProject = () => {
 
+  }
 
   const handleAccountsChanged = async (accounts) => {
 
@@ -85,10 +89,11 @@ export default function Home() {
       .then((events) => {
         if(events.length){
           if(localStorage.getItem(accounts[0])){
+            const accountKeyPair = new Keypair(localStorage.getItem(accounts[0]));
             setAccount({
               isRegistered: true,
               address: accounts[0],
-              keypair: new Keypair()
+              keypair: accountKeyPair
             });
           }else{
             setLocalPrivateKeyNotFound(true);
@@ -175,6 +180,21 @@ export default function Home() {
       keypair: newKeypair
     });
   }
+
+  const handleDeposit = () => {
+
+  }
+
+  const handleWithdrawal = () => {
+
+  }
+
+  useEffect(() => {
+    if(account?.isRegistered && projects?.length && !myProject){
+      setMyProject((projects || [])?.find(project => project?.publicKey === account?.keypair?.address()))
+    }
+  }, [account, projects])
+
 
   useEffect(() => {
     if(zkInvest){
@@ -295,7 +315,11 @@ export default function Home() {
               accountRegistrationLoading ||
               accountInformationLoading
             ) ?
-            <Typography>Loading ...</Typography> :
+            <Typography
+              style={{marginLeft: 'auto'}}
+            >
+              Loading ...
+            </Typography> :
             (
               (
                 providerError ||
@@ -316,12 +340,23 @@ export default function Home() {
                       <Typography>
                         Shielded Balance: {shieldedBalance || '0'} WETH
                       </Typography>
-                      <Button
-                        variant='contained'
-                        size='small'
-                      >
-                        Withdraw
-                      </Button>
+                      <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+                        <Button
+                          variant='contained'
+                          size='small'
+                          onClick={handleDeposit}
+                        >
+                          Deposit
+                        </Button>
+                        <Button
+                          variant='contained'
+                          size='small'
+                          style={{marginLeft: 5}}
+                          onClick={handleWithdrawal}
+                        >
+                          Withdraw
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   :
@@ -373,30 +408,53 @@ export default function Home() {
                 (
                   accountError ?
                   <Typography color='error'>{accountError}</Typography> :
-                  (
-                    account ?
-                    (
-                      account?.isRegistered ?
-                      <div style={{width: '50%', backgroundColor: '#AAA'}}>
-                        <div style={{display: 'flex', flexDirection: 'row'}}>
-                          <p style={{width: '50%'}}>Deposit</p>
-                          <p style={{width: '50%'}}>Invest</p>
-                        </div>
+                  <div style={{width: '50%', backgroundColor: '#AAA'}}>
+                    <div style={{display: 'flex', flexDirection: 'row'}}>
+                      <p>Investments</p>
+                    </div>
+                    {
+                      account ?
+                      (
+                        account?.isRegistered ?
                         <div style={{backgroundColor: '#CCC'}}>
                           Account Content
-                        </div>
-                      </div> :
-                      <Typography>No account registered yet</Typography>
-                    ) :
-                    <Typography>Please connect your account</Typography>
-                  )
+                        </div> :
+                        <Typography>No account registered yet</Typography>
+                      ) :
+                      <Typography>Please connect your account</Typography>
+                    }
+                  </div>
                 )
               }
+
               <div style={{width: '50%', backgroundColor: '#EEE'}}>
-                <div style={{display: 'flex', flexDirection: 'row'}}>
+                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
                   <Typography color='#555' style={{textAlign: 'center'}}>Projects</Typography>
+                  {
+                    !myProject &&
+                    <Button
+                      variant='contained'
+                      size='small'
+                      onClick={handleCreateProject}
+                      style={{marginLeft: 'auto', marginRight: 10}}
+                    >
+                      Create Project
+                    </Button>
+                  }
                 </div>
-                <Typography color='#555'>Project Content</Typography>
+                {
+                  projectsLoading ?
+                  <Typography color='#555'>Loading Projects</Typography> :
+                  (
+                    projectsError ?
+                    <Typography color='error'>{projectsError}</Typography> :
+                    (
+                      projects.map((project) => (
+                        <Typography color='#555'>Project Content</Typography>
+                      ))
+                    )
+                  )
+                }
               </div>
             </div>
           )
