@@ -114,7 +114,8 @@
 }
 
 .headerContent {
-  margin-left: auto;
+  width: 100%;
+  display: flex;
 }
 
 @media (max-width: 600px) {

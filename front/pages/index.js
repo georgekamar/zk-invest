@@ -306,15 +306,44 @@ export default function Home() {
                 account ?
                 (
                   account?.isRegistered ?
-                  <Typography>
-                    <span style={{cursor: 'pointer'}} onClick={account?.keypair?.pubkey ? (() => navigator.clipboard.writeText(account?.keypair?.pubkey?.toHexString())) : ()=>{}}>
-                      {account?.keypair?.pubkey ? (account?.keypair?.pubkey?.toHexString()?.slice(0, 7) + '...' + account?.keypair?.pubkey?.toHexString()?.slice(60)) : '0x0'}:
-                    </span>
-                    {shieldedBalance ? (' ' + shieldedBalance) : ' 0'} WETH
-                  </Typography> :
-                  <Button disabled={accountRegistrationClicked} onClick={handleRegistration}>Register</Button>
+                  <div style={{ width:'100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+                    <Typography>
+                      Shielded Address: <span style={{cursor: 'pointer'}} onClick={account?.keypair?.address() ? (() => navigator.clipboard.writeText(account?.keypair?.address())) : ()=>{}}>
+                        {account?.keypair?.address() ? (account?.keypair?.address()?.slice(0, 7) + '...' + account?.keypair?.address()?.slice(124)) : '0x0'}
+                      </span>
+                    </Typography>
+                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+                      <Typography>
+                        Shielded Balance: {shieldedBalance || '0'} WETH
+                      </Typography>
+                      <Button
+                        variant='contained'
+                        size='small'
+                      >
+                        Withdraw
+                      </Button>
+                    </div>
+                  </div>
+                  :
+                  <Button
+                    variant='contained'
+                    size='small'
+                    disabled={accountRegistrationClicked}
+                    onClick={handleRegistration}
+                    style={{marginLeft: 'auto'}}
+                  >
+                    Register
+                  </Button>
                 ) :
-                <Button disabled={accountConnectWaiting} onClick={handleConnect}>Connect</Button>
+                <Button
+                  variant='contained'
+                  size='small'
+                  disabled={accountConnectWaiting}
+                  onClick={handleConnect}
+                  style={{marginLeft: 'auto'}}
+                >
+                  Connect
+                </Button>
               )
             )
           }
