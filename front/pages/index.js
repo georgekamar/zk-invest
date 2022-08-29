@@ -293,7 +293,7 @@ export default function Home() {
 
   useEffect(() => {
     if(ethersProvider){
-      const zkInvestTemp = new Contract("0x807BEbD7A677b089e7d0dbd554AC93E92a2A8291", ZkInvestContract.abi, ethersProvider);
+      const zkInvestTemp = new Contract(process.env.CONTRACT_ADDRESS, ZkInvestContract.abi, ethersProvider);
       setZkInvest(zkInvestTemp);
       setSigner(zkInvestTemp.connect(ethersProvider.getSigner()));
     }
@@ -361,7 +361,7 @@ export default function Home() {
 
   }, [account]);
 
-  console.log(shieldedBalances)
+  // console.log(shieldedBalances)
 
   useEffect(() => {
 
@@ -379,7 +379,7 @@ export default function Home() {
             setProviderLoading(false);
           }else{
             const chainId = await provider.request({ method: 'eth_chainId' });
-            if(chainId !== '0x5' && chainId !== '0x7a69'){    // Goerli chain
+            if(chainId !== '0x5' || (process.env.ALLOW_LOCAL_CHAIN == 'Y' && chainId !== '0x7a69')){    // Goerli chain
               setProviderError('Current chain not supported, please switch to Goerli Network');
             }
             setMetamaskProvider(provider);
