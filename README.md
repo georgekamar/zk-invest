@@ -11,11 +11,13 @@ The main smart contract is currently deployed on [Ethereum's Goerli Testnet](htt
 
 These are the addresses of the deployed verifiers, the OwnableERC1155 Token, the hasher and the ZKInvest contract on Goerli Testnet.
 
+
 ```
-  // verifier2: 0x55Ea1dbcD66B55Ca4a6B26bc9569C3dA16390471
-  // verifier16: 0x23BD33cba2fe2436416dF4CDF4687809b4503d6a
-  // projectTokenTransferVerifier: 0x827866C042a58F67b33BD0d9C9128eE7A307401D
-  // hasher: 0x2b1040c24a106913bBD3149981c07f1643fe93c4
-  // ownableERC1155: 0x3D08c0C140B366281DF2609689F929079DA18E95
-  // ZK Invest implementation address: 0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d
+verifier2: 0x55Ea1dbcD66B55Ca4a6B26bc9569C3dA16390471
+verifier16: 0x23BD33cba2fe2436416dF4CDF4687809b4503d6a
+projectTokenTransferVerifier: 0x827866C042a58F67b33BD0d9C9128eE7A307401D
+hasher: 0x2b1040c24a106913bBD3149981c07f1643fe93c4
+ownableERC1155: 0x3D08c0C140B366281DF2609689F929079DA18E95
+ZK Invest implementation address: 0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d
   ```
+ 
