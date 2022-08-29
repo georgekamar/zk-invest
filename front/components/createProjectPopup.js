@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { utils } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { Button, TextField, Typography } from '@mui/material';
 // import { createProject } from '../lib';
 
@@ -28,6 +28,9 @@ export default function CreateProjectPopup(props) {
     let parsedTokenValue;
     try{
       parsedTokenValue = utils.parse(tokenValue);
+      if(parsedTokenValue.lte(BigNumber.from(0)){
+        throw 'Error';
+      })
     }catch(e){
       setError('Invalid Amount');
     }
@@ -44,6 +47,7 @@ export default function CreateProjectPopup(props) {
       //   description,
       //   tokenValue: parsedTokenValue
       // })
+      setLoading(false);
       props?.hidePopup();
     }catch(error){
       setError('There was an error creating your project, please reload the page and try again');
@@ -67,7 +71,6 @@ export default function CreateProjectPopup(props) {
 
     <div className={styles.popupContainer}>
       <Typography color='error'>{error}</Typography>
-      <Typography color='black'>We couldn't find your private key in your local storage, please enter it here to access ZK Invest</Typography>
       <TextField
         label='Project Title'
         onChange={handleTitleChange}
