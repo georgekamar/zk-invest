@@ -74,7 +74,7 @@ export default function WithdrawalPopup(props) {
         <Typography color='error'>{error}</Typography>
         <Typography color='#444'>Withdraw Funds</Typography>
         <TextField
-          label=`Amount ${props?.tokenId == 0 ? '(WETH)': ''}`
+          label={`Amount ${props?.tokenId == 0 ? '(WETH)': ''}`}
           onChange={handleTokenAmountChange}
           value={tokenAmount}
         />
