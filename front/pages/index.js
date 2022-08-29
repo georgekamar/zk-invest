@@ -10,10 +10,10 @@ import { calculateBalances, addBalances, subBalances } from '../lib/utils';
 
 import RegistrationPopup from '../components/registrationPopup';
 import InputPrivateKeyPopup from '../components/inputPrivateKeyPopup';
-import CreateProjectPopup from '../components/CreateProjectPopup';
-import DepositPopup from '../components/DepositPopup';
-import WithdrawPopup from '../components/WithdrawPopup';
-import InvestmentPopup from '../components/InvestmentPopup';
+import CreateProjectPopup from '../components/createProjectPopup';
+import DepositPopup from '../components/depositPopup';
+import WithdrawPopup from '../components/withdrawPopup';
+import InvestmentPopup from '../components/investmentPopup';
 
 import { Button, Typography } from '@mui/material';
 
