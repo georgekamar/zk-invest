@@ -202,6 +202,7 @@ export default function Home() {
   useEffect(() => {
     if(zkInvest){
       loadProjects();
+      metamaskProvider.on('accountsChanged', handleAccountsChanged);
       zkInvest.on("NewProjectCreated", (newProjectEvent) => {
         console.log("New Project Created")
         const newProject = utils.AbiCoder.decode([ "bytes creatorPubkey", "uint256 tokenId", "string title", "string description" ], newProjectEvent);
@@ -267,13 +268,12 @@ export default function Home() {
             if(chainId !== '0x5' && chainId !== '0x7a69'){    // Goerli chain
               setProviderError('Current chain not supported, please switch to Goerli Network');
             }
-            provider.on('accountsChanged', handleAccountsChanged);
-            provider.on('chainChanged', handleChainChanged);
-            provider.on('disconnect', handleProviderDisconnected);
             setMetamaskProvider(provider);
             const ethersProviderTemp = new providers.Web3Provider(provider);
             setEthersProvider(ethersProviderTemp);
             setProviderLoading(false);
+            provider.on('chainChanged', handleChainChanged);
+            provider.on('disconnect', handleProviderDisconnected);
           }
         }else{
           setProviderError('MetaMask is not installed');
