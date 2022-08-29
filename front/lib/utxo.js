@@ -1,7 +1,6 @@
-const { ethers } = require('hardhat')
-const { BigNumber } = ethers
-const { randomBN, poseidonHash, poseidonHash2, encryptUtxo } = require('./utils')
-const { Keypair } = require('./keypair')
+import { BigNumber } from 'ethers';
+import { randomBN, poseidonHash, poseidonHash2, encryptUtxo } from './utils';
+import { Keypair } from './keypair';
 
 const EMPTY_PUB_ADDRESS = '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
 const EMPTY_PUB_KEY = '0x0000000000000000000000000000000000000000000000000000000000000000';

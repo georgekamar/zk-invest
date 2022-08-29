@@ -9,12 +9,22 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.10.0",
+    "@emotion/styled": "^11.10.0",
     "@metamask/detect-provider": "^1.2.0",
-    "circomlib": "^2.0.5",
+    "@mui/material": "^5.10.2",
+    "buffer": "^6.0.3",
+    "circomlib": "git+https://github.com/tornadocash-community/circomlib.git#d20d53411d1bef61f38c99a8b36d5d0cc4836aa1",
+    "crypto-browserify": "^3.12.0",
+    "eth-sig-util": "^3.0.1",
     "ethers": "^5.7.0",
+    "ffjavascript": "^0.2.55",
+    "fixed-merkle-tree": "^0.7.3",
     "next": "12.2.5",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "snarkjs": "^0.4.25",
+    "web3-utils": "^1.7.5"
   },
   "devDependencies": {
     "eslint": "8.22.0",

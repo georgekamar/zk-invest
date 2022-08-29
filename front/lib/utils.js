@@ -1,8 +1,9 @@
 /* global network */
-const crypto = require('crypto')
-const { ethers } = require('hardhat')
-const BigNumber = ethers.BigNumber
-const { poseidon } = require('circomlib')
+import crypto from 'crypto';
+import { BigNumber, utils, provider } from 'ethers';
+import { poseidon } from 'circomlib';
+
+const Buffer = require('buffer/').Buffer;
 
 const poseidonHash = (items) => BigNumber.from(poseidon(items).toString())
 const poseidonHash2 = (a, b) => poseidonHash([a, b])
@@ -23,7 +24,7 @@ function getExtDataHash({
   encryptedOutput1,
   encryptedOutput2
 }) {
-  const abi = new ethers.utils.AbiCoder()
+  const abi = new utils.AbiCoder()
 
   const encodedData = abi.encode(
     [
@@ -41,7 +42,7 @@ function getExtDataHash({
       },
     ],
   )
-  const hash = ethers.utils.keccak256(encodedData)
+  const hash = utils.keccak256(encodedData)
   return BigNumber.from(hash).mod(FIELD_SIZE)
 }
 
@@ -93,7 +94,7 @@ async function getSignerFromAddress(address) {
     params: [address],
   })
 
-  return await ethers.provider.getSigner(address)
+  return await provider.getSigner(address)
 }
 
 function encryptUtxo(utxoData, keypair, destPubAddress) {

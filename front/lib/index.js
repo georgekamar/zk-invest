@@ -1,13 +1,12 @@
 /* eslint-disable no-console */
-const MerkleTree = require('fixed-merkle-tree')
-const { ethers } = require('hardhat')
-const { BigNumber } = ethers
-const { toFixedHex, poseidonHash2, getExtDataHash, FIELD_SIZE, shuffle, encryptUtxo } = require('./utils')
-const Utxo = require('./utxo')
-const { Keypair } = require('./keypair')
+import MerkleTree from 'fixed-merkle-tree';
+import { BigNumber } from 'ethers';
+import { toFixedHex, poseidonHash2, getExtDataHash, FIELD_SIZE, shuffle, encryptUtxo } from './utils';
+import Utxo from './utxo';
+import { Keypair } from './keypair';
 
-const { prove } = require('./prover')
-const MERKLE_TREE_HEIGHT = 5
+import { prove } from './prover';
+const MERKLE_TREE_HEIGHT = 23;
 
 async function buildMerkleTree({ zkInvest }) {
   const filter = zkInvest.filters.NewCommitment()

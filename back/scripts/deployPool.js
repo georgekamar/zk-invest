@@ -21,7 +21,7 @@ async function main() {
 
 
   // GOERLI Ethereum Testnet Deployment Addresses:
-  
+
   // WETH token: 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6
   // multisig: 0x8ECe2A05e0AdA6c70BA4a580EFf87f23D964723c
   // verifier2: 0x55Ea1dbcD66B55Ca4a6B26bc9569C3dA16390471
@@ -101,6 +101,7 @@ async function main() {
 
 
   ownableERC1155.changeOwner(zkInvest.address);
+  console.log('Ownable ERC1155 owner changed to ZK Invest address');
 
   // const CrossChainUpgradeableProxy = await ethers.getContractFactory('CrossChainUpgradeableProxy')
   // const proxy = await CrossChainUpgradeableProxy.deploy(tornadoImpl.address, govAddress, [], amb, l1ChainId)
@@ -115,7 +116,7 @@ async function main() {
   )
   console.log(
     // `Proxy initialized with MINIMUM_WITHDRAWAL_AMOUNT=${MINIMUM_WITHDRAWAL_AMOUNT} ETH and MAXIMUM_DEPOSIT_AMOUNT=${MAXIMUM_DEPOSIT_AMOUNT} ETH`,
-    `Proxy initialized with MAXIMUM_DEPOSIT_AMOUNT=${MAXIMUM_DEPOSIT_AMOUNT} ETH`,
+    `Pool initialized with MAXIMUM_DEPOSIT_AMOUNT=${MAXIMUM_DEPOSIT_AMOUNT} ETH`,
   )
 }
 

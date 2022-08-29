@@ -300,8 +300,6 @@ describe('ZK Invest Tests', function () {
       // const zkInvestBalance = await token.balanceOf(zkInvest.address)
       // expect(zkInvestBalance).to.be.equal(initialZkInvestPoolBalance.add(aliceDepositAmount).sub(aliceWithdrawAmount))
 
-      }
-
   })
 
 })

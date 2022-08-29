@@ -1,5 +1,5 @@
-const { wtns, groth16 } = require('snarkjs')
-const { utils } = require('ffjavascript')
+import { wtns, groth16 } from 'snarkjs';
+import { utils } from 'ffjavascript';
 
 const fs = require('fs')
 const tmp = require('tmp-promise')

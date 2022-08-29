@@ -1,7 +1,6 @@
-const { encrypt, decrypt, getEncryptionPublicKey } = require('eth-sig-util')
-const { ethers } = require('hardhat')
-const { BigNumber } = ethers
-const { poseidonHash, toFixedHex } = require('./utils')
+import { encrypt, decrypt, getEncryptionPublicKey } from 'eth-sig-util';
+import { BigNumber, Wallet } from 'ethers';
+import { poseidonHash, toFixedHex } from './utils';
 
 function packEncryptedMessage(encryptedMessage) {
   const nonceBuf = Buffer.from(encryptedMessage.nonce, 'base64')
@@ -39,7 +38,7 @@ class Keypair {
    *
    * @param {string} privkey
    */
-  constructor(privkey = ethers.Wallet.createRandom().privateKey) {
+  constructor(privkey = Wallet.createRandom().privateKey) {
     this.privkey = privkey
     this.pubkey = poseidonHash([this.privkey])
     this.encryptionKey = getEncryptionPublicKey(privkey.slice(2))
@@ -69,7 +68,6 @@ class Keypair {
       str = str.slice(2)
     }
     if (str.length !== 128) {
-      console.log(str.length)
       throw new Error('Invalid key length')
     }
     return Object.assign(new Keypair(), {
