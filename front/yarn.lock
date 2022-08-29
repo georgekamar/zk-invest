@@ -3603,6 +3603,14 @@ wasmcurves@0.1.0:
     big-integer "^1.6.42"
     blakejs "^1.1.0"
 
+wasmsnark@^0.0.10:
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/wasmsnark/-/wasmsnark-0.0.10.tgz#5d8e04a380c00390a484a44dd9ecd254ae929669"
+  integrity sha512-ARrJWhxvnBJXMERwBcnEnO5ByLwYhJZr1xwac9dl61SN7+1eOmG7Od3SJL1GzU6zaf86b9wza20y1d5ThCecLw==
+  dependencies:
+    big-integer "^1.6.42"
+    blakejs "^1.1.0"
+
 web-worker@^1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/web-worker/-/web-worker-1.2.0.tgz#5d85a04a7fbc1e7db58f66595d7a3ac7c9c180da"

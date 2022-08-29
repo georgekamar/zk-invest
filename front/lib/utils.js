@@ -1,5 +1,5 @@
 /* global network */
-import crypto from 'crypto';
+import crypto from 'crypto-browserify';
 import { BigNumber, utils, provider } from 'ethers';
 import { poseidon } from 'circomlib';
 

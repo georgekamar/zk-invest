@@ -17,14 +17,22 @@ export default function InputPrivateKeyPopup(props) {
     setPrivInput(e.nativeEvent.text);
   }
 
-  <div className={styles.popupContainer}>
-    <Typography color='error'>{error}</Typography>
-    <Typography color='black'>We couldn't find your private key in your local storage, please enter it here to access ZK Invest</Typography>
-    <TextField
-      label='Private Key'
-      onChange={handlePrivInputChange}
-      value={privInput}
-    />
-    <Button onClick={handleSubmitPrivateKey}>Submit</Button>
-  </div>
+  return (
+    <div className={styles.popupContainer}>
+      <Typography color='error'>{error}</Typography>
+      <Typography color='black'>We couldn't find your private key in your local storage, please enter it here to access ZK Invest</Typography>
+      <TextField
+        label='Private Key'
+        onChange={handlePrivInputChange}
+        value={privInput}
+      />
+      <Button
+        variant='contained'
+        size='small'
+        onClick={handleSubmitPrivateKey}
+      >
+        Submit
+      </Button>
+    </div>
+  )
 }

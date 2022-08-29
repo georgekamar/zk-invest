@@ -10,6 +10,7 @@ import { Keypair } from '../lib/keypair';
 
 import RegistrationPopup from '../components/registrationPopup';
 import InputPrivateKeyPopup from '../components/inputPrivateKeyPopup';
+import CreateProjectPopup from '../components/CreateProjectPopup';
 
 import { Button, Typography } from '@mui/material';
 
@@ -55,6 +56,8 @@ export default function Home() {
   const [projectsError, setProjectsError] = useState(null);
   const [projects, setProjects] = useState();
 
+  const [creatingProject, setCreatingProject] = useState(false);
+
 
   const loadProjects = () => {
 
@@ -74,7 +77,7 @@ export default function Home() {
   }
 
   const handleCreateProject = () => {
-
+    setCreatingProject(true);
   }
 
   const handleAccountsChanged = async (accounts) => {
@@ -198,6 +201,7 @@ export default function Home() {
 
   useEffect(() => {
     if(zkInvest){
+      loadProjects();
       zkInvest.on("NewProjectCreated", (newProjectEvent) => {
         console.log("New Project Created")
         const newProject = utils.AbiCoder.decode([ "bytes creatorPubkey", "uint256 tokenId", "string title", "string description" ], newProjectEvent);
@@ -270,7 +274,6 @@ export default function Home() {
             const ethersProviderTemp = new providers.Web3Provider(provider);
             setEthersProvider(ethersProviderTemp);
             setProviderLoading(false);
-            loadProjects();
           }
         }else{
           setProviderError('MetaMask is not installed');
@@ -306,6 +309,14 @@ export default function Home() {
         localPrivateKeyNotFound &&
         <InputPrivateKeyPopup handleSubmitPrivateKey={handleSubmitPrivateKey} />
       }
+      {
+        creatingProject &&
+        <CreateProjectPopup
+          account={account}
+          signer={signer}
+          hidePopup={() => setCreatingProject(false)}
+        />
+      }
       <header className={styles.header}>
         <div className={styles.headerContent}>
           {
@@ -333,7 +344,7 @@ export default function Home() {
                   <div style={{ width:'100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
                     <Typography>
                       Shielded Address: <span style={{cursor: 'pointer'}} onClick={account?.keypair?.address() ? (() => navigator.clipboard.writeText(account?.keypair?.address())) : ()=>{}}>
-                        {account?.keypair?.address() ? (account?.keypair?.address()?.slice(0, 7) + '...' + account?.keypair?.address()?.slice(124)) : '0x0'}
+                        {account?.keypair?.address() ? (account?.keypair?.address()?.slice(0, 7) + '...' + account?.keypair?.address()?.slice(124)) : '0x0'} <span style={{color: '#22CCEE'}}>(copy)</span>
                       </span>
                     </Typography>
                     <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
@@ -431,12 +442,13 @@ export default function Home() {
                 <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
                   <Typography color='#555' style={{textAlign: 'center'}}>Projects</Typography>
                   {
+                    account?.isRegistered &&
                     !myProject &&
                     <Button
                       variant='contained'
                       size='small'
                       onClick={handleCreateProject}
-                      style={{marginLeft: 'auto', marginRight: 10}}
+                      style={{marginLeft: 'auto', marginRight: 5}}
                     >
                       Create Project
                     </Button>
@@ -448,11 +460,17 @@ export default function Home() {
                   (
                     projectsError ?
                     <Typography color='error'>{projectsError}</Typography> :
-                    (
-                      projects.map((project) => (
-                        <Typography color='#555'>Project Content</Typography>
-                      ))
-                    )
+                    <div>
+                      {
+                        myProject &&
+                        <Typography>{myProject?.title}</Typography>
+                      }
+                      {
+                        projects.map((project) => (
+                          <Typography color='#555'>{project?.title}</Typography>
+                        ))
+                      }
+                    </div>
                   )
                 }
               </div>
