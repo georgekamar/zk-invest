@@ -293,7 +293,7 @@ export default function Home() {
 
   useEffect(() => {
     if(ethersProvider){
-      const zkInvestTemp = new Contract(process.env.CONTRACT_ADDRESS, ZkInvestContract.abi, ethersProvider);
+      const zkInvestTemp = new Contract(process.env.CONTRACT_ADDRESS || '0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d', ZkInvestContract.abi, ethersProvider);
       setZkInvest(zkInvestTemp);
       setSigner(zkInvestTemp.connect(ethersProvider.getSigner()));
     }
