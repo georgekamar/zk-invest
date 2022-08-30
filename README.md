@@ -33,3 +33,38 @@ In Zk Invest, additional Zero Knowledge logic is required to solve the following
 2- Before that proof is generated and the token commitments are sent to the investor, the investment commitments are not inserted in the Merkle Tree, and the nullifiers are not inserted in the nullifiers array. Instead the commitments and the nullifiers are mapped to one another and marked as pending on the contract.
 
 For the implementation of the tokens, I implemented an Ownable ERC1155 token that was set to be owned by the ZK Investment Contract during deployment. The ERC1155 Standard allows the management (minting, transferring and burning) of different types of tokens, both fungible and non-fungible, within one contract. In my design, to preserve anonymity further, project tokens are only minted upon withdrawal, enabling users who receive them to freely trade them within the pool without even showing a balance on the contract.
+
+
+ # Run Locally
+
+ ## Clone the repository
+
+`git clone git clone https://github.com/georgekamar/zku-final-project`
+
+ ## Run the tests on the back
+
+ ```
+ cd back
+ yarn
+ yarn build
+ yarn test
+ ```
+
+ ## Deploy to localhost hardhat network
+
+Run hardhat network
+ `npx hardhat node`
+
+Deploy contracts locally
+ `npx hardhat run ./scripts/deployPool_local.js --network localhost`
+
+ ## Connect the front end
+
+ ```
+ cd ../front
+ yarn
+ yarn build
+ yarn start
+ ```
+
+The browser should open a new window on `http://localhost:3000`, connect Metamask and switch to localhost network
