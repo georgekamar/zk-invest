@@ -1,5 +1,4 @@
 /* eslint-disable indent, no-undef */
-require('@typechain/hardhat')
 require('@nomiclabs/hardhat-ethers')
 require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-etherscan')
@@ -65,37 +64,6 @@ const config = {
     ],
   },
   networks: {
-    // hardhat: {
-    //   forking: {
-    //     url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-    //     blockNumber: 13685625,
-    //   },
-    //   chainId: 1,
-    //   initialBaseFeePerGas: 5,
-    //   loggingEnabled: false,
-    //   allowUnlimitedContractSize: false,
-    //   blockGasLimit: 50000000,
-    // },
-    // rinkeby: {
-    //   url: `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    //   accounts: process.env.PRIVATE_KEY
-    //     ? [process.env.PRIVATE_KEY]
-    //     : {
-    //         mnemonic: 'test test test test test test test test test test test junk',
-    //       },
-    // },
-    hardhat: {
-      accounts: [
-        {
-          privateKey: process.env.PRIVATE_KEY,
-          balance: '10000000000000000000000'
-        },
-        {
-          privateKey: process.env.SECOND_PRIVATE_KEY,
-          balance: '10000000000000000000000'
-        }
-      ]
-    },
     harmony_devnet: {
       url: process.env.HARMONY_DEVNET_RPC || 'https://api.s0.ps.hmny.io/',
       accounts: process.env.PRIVATE_KEY
