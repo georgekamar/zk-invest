@@ -1,11 +1,11 @@
 import Head from 'next/head';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { Contract, providers, utils } from 'ethers';
+import { BigNumber, Contract, providers, utils } from 'ethers';
 import detectEthereumProvider from "@metamask/detect-provider"
 
 import { Keypair } from '../lib/keypair';
-import { Utxo } from '../lib/utxo';
+import Utxo from '../lib/utxo';
 import { calculateBalances, addBalances, subBalances } from '../lib/utils';
 
 import RegistrationPopup from '../components/registrationPopup';
@@ -14,6 +14,8 @@ import CreateProjectPopup from '../components/createProjectPopup';
 import DepositPopup from '../components/depositPopup';
 import WithdrawPopup from '../components/withdrawPopup';
 import InvestmentPopup from '../components/investmentPopup';
+import PendingOutgoingInvestmentsPopup from '../components/pendingOutgoingInvestmentsPopup';
+import PendingIncomingInvestmentsPopup from '../components/pendingIncomingInvestmentsPopup';
 
 import { Button, Typography } from '@mui/material';
 
@@ -22,6 +24,7 @@ import styles from '../styles/Home.module.css'
 
 import ZkInvestContract from '../contracts/ZkInvest.sol/ZkInvest.json';
 import OwnableERC1155Contract from '../contracts/tokens/OwnableERC1155.sol/OwnableERC1155.json';
+import ZkTokenContract from '../contracts/tokens/ERC20.sol/ERC20.json';
 
 const loadProjects = async (zkInvest, setProjects, setProjectTokens, setProjectsLoading, setProjectsError) => {
 
@@ -50,7 +53,6 @@ const loadProjects = async (zkInvest, setProjects, setProjectTokens, setProjects
 
 }
 
-
 const handleConnect = (metamaskProvider, setAccountConnectWaiting, setProviderError, handleAccountsChanged) => {
   if(metamaskProvider){
     setAccountConnectWaiting(true);
@@ -69,6 +71,7 @@ const handleRegistrationConfirmation = async (signer, account, setAccount, setAc
       throw 'error';
     }
     localStorage.setItem(account.address, account?.keypair?.privkey);
+    // await signer.initializeProjects()
     await signer.register(
       {
         owner: account?.address,
@@ -102,12 +105,15 @@ export default function Home() {
 
   // const [rpcProvider, setRpcProvider] = useState(new providers.JsonRpcProvider("http://localhost:8545"));
   const [zkInvest, setZkInvest] = useState(null);
+  const [zkInvestToken, setZkInvestToken] = useState(null);
+  const [zkInvestProjectsToken, setZkInvestProjectsToken] = useState(null);
   // const zkInvest = new Contract("0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d", ZkInvestContract.abi, provider)
   const [abiCoder, setAbiCoder] = useState(new utils.AbiCoder());
 
   const [metamaskProvider, setMetamaskProvider] = useState(null);
   const [ethersProvider, setEthersProvider] = useState(null);
   const [signer, setSigner] = useState(null);
+  const [tokenSigner, setTokenSigner] = useState(null);
 
   const [providerLoading, setProviderLoading] = useState(true);
   const [providerError, setProviderError] = useState(null);
@@ -128,10 +134,12 @@ export default function Home() {
 
   // const [shieldedAddress, setShieldedAddress] = useState();
   const [validCommitmentUtxos, setValidCommitmentUtxos] = useState();
-  const [pendingCommitmentUtxos, setPendingCommitmentUtxos] = useState();
+  const [pendingIncomingCommitmentUtxos, setPendingIncomingCommitmentUtxos] = useState();
+  const [pendingCancellableCommitmentUtxos, setPendingCancellableCommitmentUtxos] = useState();
   const [toBeNullifiedCommitmentUtxos, setToBeNullifiedCommitmentUtxos] = useState();
   const [shieldedBalances, setShieldedBalances] = useState();
-  const [pendingBalances, setPendingBalances] = useState();
+  const [pendingIncomingBalances, setPendingIncomingBalances] = useState();
+  const [pendingOutgoingBalances, setPendingOutgoingBalances] = useState();
 
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState(null);
@@ -142,6 +150,9 @@ export default function Home() {
   const [withdrawingFunds, setWithdrawingFunds] = useState(false);
   const [depositingFunds, setDepositingFunds] = useState(false);
   const [projectInvestingIn, setProjectInvestingIn] = useState(false);
+
+  const [managingPendingOutgoingInvestments, setManagingPendingOutgoingInvestments] = useState(false);
+  const [managingPendingIncomingInvestments, setManagingPendingIncomingInvestments] = useState(false);
 
   const [projectTokenWithdrawal, setProjectTokenWithdrawal] = useState(false);
 
@@ -188,6 +199,13 @@ export default function Home() {
 
   }
 
+  const handleViewMyProjectInvestments = () => {
+    setManagingPendingIncomingInvestments(true);
+  }
+
+  const handlePendingInvestments = () => {
+    setManagingPendingOutgoingInvestments(true);
+  }
 
   const handleInvest = (project) => {
     setProjectInvestingIn(project);
@@ -201,7 +219,7 @@ export default function Home() {
     setDepositingFunds(true);
   }
 
-  const handleWithdrawal = () => {
+  const handleWithdrawal = async () => {
     setWithdrawingFunds(true);
   }
 
@@ -290,12 +308,16 @@ export default function Home() {
     }
   }, [zkInvest])
 
-
   useEffect(() => {
     if(ethersProvider){
-      const zkInvestTemp = new Contract(process.env.CONTRACT_ADDRESS || '0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d', ZkInvestContract.abi, ethersProvider);
+      const zkInvestTemp = new Contract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d', ZkInvestContract.abi, ethersProvider);
+      const zkInvestTokenTemp = new Contract(process.env.NEXT_PUBLIC_TOKEN_ADDRESS || '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6', ZkTokenContract.abi, ethersProvider)
+      setZkInvestToken(zkInvestTokenTemp)
       setZkInvest(zkInvestTemp);
+      const zkInvestProjectsTokenTemp = new Contract(process.env.NEXT_PUBLIC_PROJECT_TOKENS_ADDRESS || '0x7c03d0fB2819B3587B3Ba8dAD13232EB2DfFD59D', OwnableERC1155Contract.abi, ethersProvider)
+      setZkInvestProjectsToken(zkInvestProjectsTokenTemp);
       setSigner(zkInvestTemp.connect(ethersProvider.getSigner()));
+      setTokenSigner(zkInvestTokenTemp.connect(ethersProvider.getSigner()));
     }
   }, [ethersProvider])
 
@@ -313,40 +335,73 @@ export default function Home() {
         zkInvest.queryFilter(pendingCommitmentsFilter)
       ])
       .then(async ([commitmentEvents, pendingCommitmentEvents]) => {
+
         let tempValidCommitmentUtxos = [];
         let tempToBeNullifiedCommitmentUtxos = [];
-        let tempPendingCommitmentUtxos = [];
+        let tempPendingIncomingCommitmentUtxos = [];
+        let tempPendingCancellableCommitmentUtxos = [];
+
         for(let event of commitmentEvents){
           try{
             let commitmentUtxo = Utxo.decrypt(account?.keypair, event.args.encryptedOutput, event.args.index);
-            const nullifierHash = commitmentUtxo.getNullifier();
-            if(await zkInvest.nullifierHashes(nullifierHash)){
-            }else if(await zkInvest.pendingNullifierHashes(nullifierHash)){
-              tempToBeNullifiedCommitmentUtxos.push(commitmentUtxo);
-            }else{
-              tempValidCommitmentUtxos.push(commitmentUtxo);
+            let isNullified = false;
+            let willBeNullified = false;
+            try{
+              const nullifierHash = commitmentUtxo.getNullifier();
+              isNullified = await zkInvest.nullifierHashes(nullifierHash);
+              willBeNullified = await zkInvest.pendingNullifierHashes(nullifierHash);
+              if(isNullified && !willBeNullified){
+              }else if(willBeNullified){
+                tempToBeNullifiedCommitmentUtxos.push(commitmentUtxo);
+              }else{
+                tempValidCommitmentUtxos.push(commitmentUtxo);
+              }
+            }catch(e){
+              if(!isNullified && !willBeNullified){
+                tempValidCommitmentUtxos.push(commitmentUtxo);
+              }
             }
-          }catch(e){
+          }catch(e2){
           }
         }
         for(let event of pendingCommitmentEvents){
           try{
+            // console.log(event)
             let pendingCommitmentUtxo = Utxo.decrypt(account?.keypair, event.args.encryptedOutput, event.args.index);
-            if(await zkInvest.pendingCommitmentToCommitment(pendingCommitmentUtxo.getCommitment())){
-              tempPendingCommitmentUtxos.push(pendingCommitmentUtxo);
+            // Make sure commitment still pending
+            const pendingSisterCommitmentUtxo = await zkInvest.pendingCommitmentToCommitment(pendingCommitmentUtxo.getCommitment());
+
+            if(!BigNumber.from(0).eq(pendingSisterCommitmentUtxo)){
+              let willBeNullified = false;
+              try{
+                willBeNullified = await zkInvest.pendingNullifierHashes(pendingCommitmentUtxo.getNullifier());
+                if(willBeNullified){
+                  tempToBeNullifiedCommitmentUtxos.push(pendingCommitmentUtxo);
+                }
+              }catch(e){
+              }finally{
+                if(willBeNullified){
+                }else if(pendingCommitmentUtxo.destPubAddress){
+                  tempPendingCancellableCommitmentUtxos.push(pendingCommitmentUtxo);
+                }else{
+                  tempPendingIncomingCommitmentUtxos.push(pendingCommitmentUtxo);
+                }
+              }
             }
-          }catch(e){
+          }catch(e2){
           }
         }
 
         setValidCommitmentUtxos(tempValidCommitmentUtxos);
         setToBeNullifiedCommitmentUtxos(tempToBeNullifiedCommitmentUtxos);
-        setPendingCommitmentUtxos(pendingCommitmentUtxos);
+        setPendingCancellableCommitmentUtxos(tempPendingCancellableCommitmentUtxos);
+        setPendingIncomingCommitmentUtxos(tempPendingIncomingCommitmentUtxos);
 
-        let tempPendingBalances = subBalances(calculateBalances(tempPendingCommitmentUtxos), calculateBalances(tempToBeNullifiedCommitmentUtxos));
-        let tempShieldedBalances = addBalances(calculateBalances(tempValidCommitmentUtxos), tempShieldedBalances);
+        let tempOutgoingBalances = calculateBalances(tempPendingCancellableCommitmentUtxos);
+        let tempShieldedBalances = subBalances(addBalances(calculateBalances(tempValidCommitmentUtxos), calculateBalances(tempToBeNullifiedCommitmentUtxos)), tempOutgoingBalances);
 
-        setPendingBalances(tempPendingBalances);
+        setPendingIncomingBalances(calculateBalances(tempPendingIncomingCommitmentUtxos));
+        setPendingOutgoingBalances(tempOutgoingBalances);
         setShieldedBalances(tempShieldedBalances);
 
       })
@@ -379,7 +434,8 @@ export default function Home() {
             setProviderLoading(false);
           }else{
             const chainId = await provider.request({ method: 'eth_chainId' });
-            if(chainId !== '0x5' || (process.env.ALLOW_LOCAL_CHAIN == 'Y' && chainId !== '0x7a69')){    // Goerli chain
+            //process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN != 'Y' &&
+            if(chainId !== '0x5' && ((process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN != 'Y') || (process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN == 'Y' && chainId !== '0x7a69'))){    // Goerli chain
               setProviderError('Current chain not supported, please switch to Goerli Network');
             }
             setMetamaskProvider(provider);
@@ -436,6 +492,8 @@ export default function Home() {
         <DepositPopup
           account={account}
           signer={signer}
+          tokenSigner={tokenSigner}
+          zkInvest={zkInvest}
           hidePopup={() => setDepositingFunds(false)}
         />
       }
@@ -467,9 +525,30 @@ export default function Home() {
           account={account}
           signer={signer}
           project={projectInvestingIn}
+          projectToken={projectTokens?.find(token => token?.id.eq(projectInvestingIn?.tokenId))}
           shieldedBalance={shieldedBalances?.[0] || 0}
           inputs={validCommitmentUtxos?.filter(utxo => utxo?.tokenId == 0) || []}
           hidePopup={() => setProjectInvestingIn(false)}
+        />
+      }
+      {
+        managingPendingOutgoingInvestments &&
+        <PendingOutgoingInvestmentsPopup
+          // account={account}
+          signer={signer}
+          projects={projects}
+          pendingCancellableCommitmentUtxos={pendingCancellableCommitmentUtxos}
+          hidePopup={() => setManagingPendingOutgoingInvestments(false)}
+        />
+      }
+      {
+        managingPendingIncomingInvestments &&
+        <PendingIncomingInvestmentsPopup
+          account={account}
+          signer={signer}
+          projectToken={projectTokens?.find(tok => tok?.id.eq(BigNumber.from(myProject?.tokenId)))}
+          pendingIncomingCommitmentUtxos={pendingIncomingCommitmentUtxos}
+          hidePopup={() => setManagingPendingIncomingInvestments(false)}
         />
       }
       <div className={styles.innerContainer}>
@@ -505,7 +584,7 @@ export default function Home() {
                       </Typography>
                       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                         <Typography>
-                          Shielded Balance: {shieldedBalances?.[0] || '0'} WETH
+                          Shielded Balance: {utils.formatEther(shieldedBalances?.[0] || 0)} WETH
                         </Typography>
                         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
                           <Button
@@ -584,31 +663,57 @@ export default function Home() {
                         (
                           account?.isRegistered ?
                           (
-                            (Object.keys(shieldedBalances || {})?.length > 1) ?
+                            (
+                              (Object.keys(shieldedBalances || {})?.length > 1) ||
+                              (pendingCancellableCommitmentUtxos?.length > 0)
+                            ) ?
                             <div style={{backgroundColor: '#CCC'}}>
                               {
-                                Object.keys(shieldedBalances || {})?.map((tokenId) => (
-                                  (tokenId != 0) &&
-                                  <div key={i.toString()} style={{backgroundColor: '#999', borderRadius: 10, margin: 5, padding: 5}}>
-                                    <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                                      <div>
-                                        {/* <Typography><b>Your Project</b></Typography> */}
-                                        <Typography>{project?.title}</Typography>
-                                        <Typography>{project?.description}</Typography>
-                                        <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => tok?.id.eq(BigNumber.from(tokenId)))?.value)}</Typography>
-                                        <Typography>Balance: {shieldedBalances[tokenId]}</Typography>
-                                      </div>
-                                      <Button
-                                        variant='contained'
-                                        size='small'
-                                        onClick={() => handleProjectTokenWithdrawal(tokenId)}
-                                        style={{marginLeft: 'auto', marginRight: 5}}
-                                      >
-                                        Withdraw
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ))
+                                (pendingCancellableCommitmentUtxos?.length > 0) &&
+                                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+                                  <Typography>Pending: {utils.formatEther(pendingOutgoingBalances?.[0])} WETH</Typography>
+                                  <Button
+                                    variant='contained'
+                                    size='small'
+                                    onClick={handlePendingInvestments}
+                                  >
+                                    View
+                                  </Button>
+                                </div>
+                              }
+                              {
+                                (Object.keys(shieldedBalances || {})?.length > 1) &&
+                                <div>
+                                  <Typography>Confirmed</Typography>
+                                  {
+                                    Object.keys(shieldedBalances || {})?.map((tokenId) => {
+                                      if(tokenId != 0){
+                                        const project = projects?.find(pr => pr?.tokenId.eq(BigNumber.from(tokenId)));
+                                        return (
+                                          <div key={tokenId} style={{backgroundColor: '#999', borderRadius: 10, margin: 5, padding: 5}}>
+                                            <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+                                              <div>
+                                                {/* <Typography><b>Your Project</b></Typography> */}
+                                                <Typography>{project?.title}</Typography>
+                                                <Typography>{projects?.description}</Typography>
+                                                <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => tok?.id.eq(BigNumber.from(tokenId)))?.value)}</Typography>
+                                                <Typography>Balance: {shieldedBalances[tokenId]?.toString()}</Typography>
+                                              </div>
+                                              <Button
+                                                variant='contained'
+                                                size='small'
+                                                onClick={() => handleProjectTokenWithdrawal(tokenId)}
+                                                style={{marginLeft: 'auto', marginRight: 5}}
+                                              >
+                                                Withdraw
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                    })
+                                  }
+                                </div>
                               }
                             </div> :
                             <Typography>You have not invested in any project yet</Typography>
@@ -648,14 +753,21 @@ export default function Home() {
                           myProject &&
                           projectTokens?.length &&
                           <div style={{backgroundColor: '#2299ee', borderRadius: 10, margin: 5, padding: 5}}>
-                            <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                              <div>
-                                <Typography><b>Your Project</b></Typography>
-                                <Typography>{myProject?.title}</Typography>
-                                <Typography>{myProject?.description}</Typography>
-                                <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => tok?.id.eq(myProject?.tokenId))?.value)}</Typography>
-                              </div>
+                            <div style={{display: 'flex', flexDirection: 'column'}}>
+                              <Typography><b>Your Project</b></Typography>
+                              <Typography>{myProject?.title}</Typography>
+                              <Typography>{myProject?.description}</Typography>
+                              <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => tok?.id.eq(myProject?.tokenId))?.value)}</Typography>
                               <Button
+                                variant='contained'
+                                size='small'
+                                color='warning'
+                                onClick={handleViewMyProjectInvestments}
+                                style={{alignSelf: 'center'}}
+                              >
+                                View Investments
+                              </Button>
+                              {/* <Button
                                 variant='contained'
                                 size='small'
                                 color='warning'
@@ -663,7 +775,7 @@ export default function Home() {
                                 style={{marginLeft: 'auto', marginRight: 5}}
                               >
                                 Invest
-                              </Button>
+                              </Button> */}
                             </div>
                           </div>
                         }
@@ -681,14 +793,23 @@ export default function Home() {
                                   <Typography>{project?.description}</Typography>
                                   <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => tok?.id.eq(project?.tokenId))?.value)}</Typography>
                                 </div>
-                                <Button
-                                  variant='contained'
-                                  size='small'
-                                  onClick={() => handleInvest(project)}
-                                  style={{marginLeft: 'auto', marginRight: 5}}
-                                >
-                                  Invest
-                                </Button>
+                                {
+                                  (
+                                    !accountLoading &&
+                                    !accountRegistrationLoading &&
+                                    !accountInformationLoading &&
+                                    !accountError &&
+                                    account?.isRegistered
+                                  ) &&
+                                  <Button
+                                    variant='contained'
+                                    size='small'
+                                    onClick={() => handleInvest(project)}
+                                    style={{marginLeft: 'auto', marginRight: 5}}
+                                  >
+                                    Invest
+                                  </Button>
+                                }
                               </div>
                             </div>
                           ))

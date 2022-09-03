@@ -86,14 +86,14 @@ const config = {
     // },
     hardhat: {
       accounts: [
-        {
+        ...(process.env.PRIVATE_KEY ? [{
           privateKey: process.env.PRIVATE_KEY,
           balance: '10000000000000000000000'
-        },
-        {
+        }] : []),
+        ...(process.env.SECOND_PRIVATE_KEY ? [{
           privateKey: process.env.SECOND_PRIVATE_KEY,
           balance: '10000000000000000000000'
-        }
+        }] : []),
       ]
     },
     harmony_devnet: {

@@ -10,13 +10,13 @@ const { toFixedHex, poseidonHash } = require('../src/utils')
 const { Keypair } = require('../src/keypair')
 // const { encodeDataForBridge } = require('./utils')
 
-const MERKLE_TREE_HEIGHT = 5
+const MERKLE_TREE_HEIGHT = 23
 // const l1ChainId = 1
 // const MINIMUM_WITHDRAWAL_AMOUNT = utils.parseEther(process.env.MINIMUM_WITHDRAWAL_AMOUNT || '0.05')
 const MAXIMUM_DEPOSIT_AMOUNT = utils.parseEther(process.env.MAXIMUM_DEPOSIT_AMOUNT || '1')
 
 describe('ZK Invest Tests', function () {
-  this.timeout(30000)
+  this.timeout(60000)
 
   async function deploy(contractName, ...args) {
     const Factory = await ethers.getContractFactory(contractName)

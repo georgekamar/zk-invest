@@ -7,7 +7,7 @@ const Utxo = require('./utxo')
 const { Keypair } = require('./keypair')
 
 const { prove } = require('./prover')
-const MERKLE_TREE_HEIGHT = 5
+const MERKLE_TREE_HEIGHT = 23
 
 async function buildMerkleTree({ zkInvest }) {
   const filter = zkInvest.filters.NewCommitment()

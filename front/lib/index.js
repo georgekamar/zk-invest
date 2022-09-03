@@ -39,7 +39,7 @@ async function getProjectTokenTransferProof({
     sentSrcPubKey: utxoSent.srcPubKey
   }
 
-  const proof = await prove(input, `./artifacts/circuits/projectTokenTransfer`)
+  const proof = await prove(input, `../circuits/projectTokenTransfer`)
 
   const args = {
     proof,
@@ -109,7 +109,7 @@ async function getProof({
 
   const extDataHash = getExtDataHash(extData)
   let input = {
-    root: tree.root,
+    root: tree.root(),
     inputNullifier: inputs.map((x) => x.getNullifier()),
     outputCommitment: outputs.map((x) => x.getCommitment()),
     publicAmount: BigNumber.from(extAmount).sub(fee).add(FIELD_SIZE).mod(FIELD_SIZE).toString(),
@@ -133,7 +133,7 @@ async function getProof({
     outPubkey: outputs.map((x) => x.keypair.pubkey),
   }
 
-  const proof = await prove(input, `./artifacts/circuits/transaction${inputs.length}`)
+  const proof = await prove(input, `/circuits/transaction${inputs.length}`)
 
   const args = {
     proof,
@@ -142,7 +142,7 @@ async function getProof({
     outputCommitments: outputs.map((x) => toFixedHex(x.getCommitment())),
     publicAmount: toFixedHex(input.publicAmount),
     publicTokenId: toFixedHex(publicTokenId),
-    extDataHash: toFixedHex(extDataHash),
+    extDataHash: toFixedHex(extDataHash)
   }
 
   return {

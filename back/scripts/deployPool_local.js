@@ -14,6 +14,32 @@ async function main() {
   // const l1Unwrapper = '0x8845F740F8B01bC7D9A4C82a6fD4A60320c07AF1' // WBNB -> BNB
   // const l1ChainId = 56
 
+
+  // [DEPRECATED] GOERLI Ethereum Testnet Deployment Addresses: [DEPRECATED]
+  //
+  // WETH token: 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6
+  // multisig: 0x8ECe2A05e0AdA6c70BA4a580EFf87f23D964723c
+  // verifier2: 0x55Ea1dbcD66B55Ca4a6B26bc9569C3dA16390471
+  // verifier16: 0x23BD33cba2fe2436416dF4CDF4687809b4503d6a
+  // projectTokenTransferVerifier: 0x827866C042a58F67b33BD0d9C9128eE7A307401D
+  // hasher: 0x2b1040c24a106913bBD3149981c07f1643fe93c4
+  // ownableERC1155: 0x3D08c0C140B366281DF2609689F929079DA18E95
+  // ZK Invest implementation address: 0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d
+
+
+
+  // GOERLI Ethereum Testnet Deployment Addresses:
+
+  // WETH token: 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6
+  // multisig: 0x8ECe2A05e0AdA6c70BA4a580EFf87f23D964723c
+  // verifier2: 0xa2B62589e33F4ff44a490400cB147211D185e61F
+  // verifier16: 0x48D507B90442927bb564c401cC9C3af38Fb2f412
+  // projectTokenTransferVerifier: 0x1a341693a9E05e8f0Fb31e285C37BeC4F2A7c177
+  // hasher: 0xE3FC4546D478aD1C9D6B201968b4a15db8EEE2Dc
+  // ownableERC1155: 0x0825be318dAfc77A0090249ad2358c190fa820DB
+  // ZkInvest: 0xB120E734055F02E3c45BF992b834162D13418d03
+
+
   // WETH (Goerli)
   // const token = '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6';
 
@@ -27,9 +53,12 @@ async function main() {
   console.log(`MintableToken: ${token.address}`);
 
   await deployedToken.mint(multisig, utils.parseEther('10000'))
-  await deployedToken.mint(testAccount, utils.parseEther('10000'))
   console.log('Minted 10000 tokens to multisig ' + multisig);
-
+  await deployedToken.mint(testAccount, utils.parseEther('10000'))
+  console.log('Minted 10000 tokens to testAccount ' + testAccount);
+  await deployedToken.approve(multisig, utils.parseEther('10'));
+  await deployedToken.transferFrom(multisig, testAccount, utils.parseEther('10'));
+  console.log('Transferred 10 tokens from ' + multisig + ' to ' + testAccount);
 
   const Verifier2 = await ethers.getContractFactory('Verifier2')
   const verifier2 = await Verifier2.deploy()
@@ -113,10 +142,16 @@ async function main() {
     // utils.parseEther(MINIMUM_WITHDRAWAL_AMOUNT),
     utils.parseEther(MAXIMUM_DEPOSIT_AMOUNT),
   )
+
   console.log(
     // `Proxy initialized with MINIMUM_WITHDRAWAL_AMOUNT=${MINIMUM_WITHDRAWAL_AMOUNT} ETH and MAXIMUM_DEPOSIT_AMOUNT=${MAXIMUM_DEPOSIT_AMOUNT} ETH`,
     `Pool initialized with MAXIMUM_DEPOSIT_AMOUNT=${MAXIMUM_DEPOSIT_AMOUNT} ETH`,
   )
+
+  await zkInvest.initializeProjects();
+
+  console.log('Projects Initialized');
+
 }
 
 main()

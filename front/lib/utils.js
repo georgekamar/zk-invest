@@ -111,12 +111,12 @@ function encryptUtxo(utxoData, keypair, destPubAddress) {
 
 function calculateBalances(utxos){
   let balances = {};
-  for(utxo in utxos){
-    let tokenId = utxo.tokenId.toString();
+  for(var i=0; i<utxos.length; i++){
+    let tokenId = utxos[i].tokenId.toString();
     if(balances?.[tokenId]){
-      balances[tokenId] = balances[tokenId].add(utxo.amount);
+      balances[tokenId] = balances[tokenId].add(utxos[i].amount);
     }else{
-      balances[tokenId] = utxo.amount;
+      balances[tokenId] = utxos[i].amount;
     }
   }
   return balances;
@@ -124,16 +124,16 @@ function calculateBalances(utxos){
 
 function addBalances(balances1, balances2){
   let newBalances = {};
-  for(tokenId in Object.keys(balances1)){
+  for(let tokenId in Object.keys(balances1 || {})){
     if(balances2?.[tokenId]){
       newBalances[tokenId] = balances1[tokenId].add(balances2[tokenId]);
     }else{
       newBalances[tokenId] = balances1[tokenId];
     }
   }
-  for(tokenId in Object.keys(balances2)){
-    if(!newBalances?.[tokenId]){
-      newBalances[tokenId] = balances2[tokenId];
+  for(let tokenId2 in Object.keys(balances2 || {})){
+    if(!newBalances?.[tokenId2]){
+      newBalances[tokenId2] = balances2[tokenId2];
     }
   }
   return newBalances;
@@ -141,14 +141,14 @@ function addBalances(balances1, balances2){
 
 function subBalances(balances1, balances2){
   let newBalances = {};
-  for(tokenId in Object.keys(balances1)){
+  for(let tokenId in Object.keys(balances1 || {})){
     if(balances2?.[tokenId]){
       newBalances[tokenId] = balances1[tokenId].sub(balances2[tokenId]);
     }else{
       newBalances[tokenId] = balances1[tokenId];
     }
   }
-  for(tokenId in Object.keys(balances2)){
+  for(let tokenId in Object.keys(balances2 || {})){
     if(!newBalances?.[tokenId]){
       newBalances[tokenId] = balances2[tokenId].mul(BigNumber.from(-1));
     }
@@ -159,11 +159,11 @@ function subBalances(balances1, balances2){
 function utxosToNullify(utxos, amount){
   let toNullify = [];
   let balance = BigNumber.from(0);
-  const sortedUtxos = utxos.sort((a, b) => b.amount.sub(a));
-  for(utxo in sortedUtxos){
+  const sortedUtxos = utxos.sort((a, b) => b.amount.sub(a.amount));
+  for(let utxo of sortedUtxos){
     balance = balance.add(utxo.amount);
     toNullify.push(utxo);
-    if(balance.gte(BigNumber.from(amount))){
+    if(balance.gte(amount)){
       break;
     }
   }

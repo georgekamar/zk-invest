@@ -3,7 +3,7 @@ import { BigNumber, utils } from 'ethers';
 import { Button, TextField, Typography } from '@mui/material';
 import Utxo from '../lib/utxo';
 import { utxosToNullify } from '../lib/utils';
-// import { transaction } from '../lib';
+import { transaction } from '../lib';
 
 import styles from '../styles/Popups.module.css';
 
@@ -19,11 +19,12 @@ export default function WithdrawalPopup(props) {
 
     let parsedTokenAmount;
     try{
-      parsedTokenAmount = utils.parseEther(tokenAmount);
+      parsedTokenAmount = BigNumber.from(props?.tokenId).eq(0) ? utils.parseEther(tokenAmount) : BigNumber.from(tokenAmount);
       if(parsedTokenAmount.lte(BigNumber.from(0))){
         throw 'Error';
       }
     }catch(e){
+      console.log(e)
       setError('Invalid Amount');
       return;
     }
@@ -46,14 +47,20 @@ export default function WithdrawalPopup(props) {
       const withdrawOutputUtxo = new Utxo({ tokenId: props?.tokenId, amount: newShieldedBalance, keypair: props?.account?.keypair });
       await transaction({
         zkInvest: props?.signer,
-        inputs: utxosToNullify(props?.inputs, tokenAmount),
+        inputs: utxosToNullify(props?.inputs, parsedTokenAmount),
         outputs: [withdrawOutputUtxo],
         recipient: withdrawAddress
       })
-      setLoading(false);
       props?.hidePopup();
     }catch(error){
-      setError('There was a problem with your withdrawal, try reloading the page and retrying');
+      console.log(error)
+      if(error?.code === 4001){
+        setError('Transaction signature was refused')
+      }else{
+        setError('There was a problem with your deposit, try reloading the page and retrying');
+      }
+    }finally{
+      setLoading(false);
     }
 
   }
@@ -70,9 +77,11 @@ export default function WithdrawalPopup(props) {
 
     <div className={styles.popupContainerContainer}>
       <div className={styles.popupContainer}>
-        <Button color='error' style={{marginLeft: 'auto'}} onClick={() => props?.hidePopup()}>x</Button>
+        <div className={styles.popupHeader}>
+          <Button color='error' disabled={loading} style={{marginLeft: 'auto'}} onClick={() => props?.hidePopup()}>x</Button>
+          <Typography color='#444'>Withdraw Funds</Typography>
+        </div>
         <Typography color='error'>{error}</Typography>
-        <Typography color='#444'>Withdraw Funds</Typography>
         <TextField
           label={`Amount ${props?.tokenId == 0 ? '(WETH)': ''}`}
           onChange={handleTokenAmountChange}

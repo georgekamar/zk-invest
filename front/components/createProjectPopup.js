@@ -47,7 +47,7 @@ export default function CreateProjectPopup(props) {
     let parsedTokenValue;
     try{
       parsedTokenValue = utils.parseEther(tokenValue);
-      if(parsedTokenValue.lte(BigNumber.from(0))){
+      if(parsedTokenValue.lt(BigNumber.from(0))){
         throw 'Error';
       }
     }catch(e){
@@ -67,10 +67,16 @@ export default function CreateProjectPopup(props) {
         description,
         tokenValue: parsedTokenValue
       })
-      setLoading(false);
       props?.hidePopup();
     }catch(error){
-      setError('There was an error creating your project, please reload the page and try again');
+      console.log(error)
+      if(error?.code === 4001){
+        setError('Transaction signature was refused')
+      }else{
+        setError('There was a problem with your deposit, try reloading the page and retrying');
+      }
+    }finally{
+      setLoading(false);
     }
 
   }
@@ -91,9 +97,11 @@ export default function CreateProjectPopup(props) {
 
     <div className={styles.popupContainerContainer}>
       <div className={styles.popupContainer}>
-        <Button color='error' style={{marginLeft: 'auto'}} onClick={() => props?.hidePopup()}>x</Button>
+        <div className={styles.popupHeader}>
+          <Button color='error' disabled={loading} style={{marginLeft: 'auto'}} onClick={() => props?.hidePopup()}>x</Button>
+          <Typography color='#444'>Create Project</Typography>
+        </div>
         <Typography color='error'>{error}</Typography>
-        <Typography color='#444'>Create Project</Typography>
         <TextField
           label='Project Title'
           onChange={handleTitleChange}

@@ -32,16 +32,24 @@ export default function DepositPopup(props) {
       // console.log(props)
       // console.log(parsedTokenAmount)
       const depositUtxo = new Utxo({ amount: parsedTokenAmount, keypair: props?.account?.keypair });
+
+      await props?.tokenSigner.approve(props?.zkInvest.address, parsedTokenAmount);
+
       await transaction({
         zkInvest: props?.signer,
         inputs: [],
         outputs: [depositUtxo]
       })
-      setLoading(false);
       props?.hidePopup();
     }catch(error){
       console.log(error)
-      setError('There was a problem with your deposit, try reloading the page and retrying');
+      if(error?.code === 4001){
+        setError('Transaction signature was refused')
+      }else{
+        setError('There was a problem with your deposit, try reloading the page and retrying');
+      }
+    }finally{
+      setLoading(false);
     }
 
   }
@@ -54,9 +62,11 @@ export default function DepositPopup(props) {
 
     <div className={styles.popupContainerContainer}>
       <div className={styles.popupContainer}>
-        <Button color='error' style={{marginLeft: 'auto'}} onClick={() => props?.hidePopup()}>x</Button>
+        <div className={styles.popupHeader}>
+          <Button color='error' disabled={loading} style={{marginLeft: 'auto'}} onClick={() => props?.hidePopup()}>x</Button>
+          <Typography color='#444'>Make A Deposit</Typography>
+        </div>
         <Typography color='error'>{error}</Typography>
-        <Typography color='#444'>Make A Deposit</Typography>
         <TextField
           label='Amount (WETH)'
           onChange={handleTokenAmountChange}

@@ -19,14 +19,15 @@ class Utxo {
    //0x 8A791620dd6260079BF849Dc5567aDC3F2FdC318
    //0x 0000000000000000000000000000000000000000
 
-  constructor({ amount = 0, tokenId = 0, srcPubKey = BigNumber.from(EMPTY_PUB_KEY), srcEncryptionAddress = EMPTY_PUB_ADDRESS, keypair = new Keypair(), blinding = randomBN(), index = null } = {}) {
-    this.amount = BigNumber.from(amount)
-    this.tokenId = BigNumber.from(tokenId)
-    this.srcPubKey = BigNumber.from(srcPubKey)
-    this.srcEncryptionAddress = srcEncryptionAddress
-    this.blinding = BigNumber.from(blinding)
-    this.keypair = keypair
-    this.index = index
+  constructor({ amount = 0, tokenId = 0, srcPubKey = BigNumber.from(EMPTY_PUB_KEY), srcEncryptionAddress = EMPTY_PUB_ADDRESS, destPubAddress = null, keypair = new Keypair(), blinding = randomBN(), index = null } = {}) {
+   this.amount = BigNumber.from(amount)
+   this.tokenId = BigNumber.from(tokenId)
+   this.srcPubKey = BigNumber.from(srcPubKey)
+   this.srcEncryptionAddress = srcEncryptionAddress
+   this.blinding = BigNumber.from(blinding)
+   this.destPubAddress = destPubAddress ? BigNumber.from(destPubAddress) : null
+   this.keypair = keypair
+   this.index = index
   }
 
   /**

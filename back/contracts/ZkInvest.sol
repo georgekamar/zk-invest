@@ -114,6 +114,16 @@ contract ZkInvest is TornadoPool {
     }
   }
 
+  // function initialize(uint256 _maximumDepositAmount) external initializer {
+  //   _initializeProjects();
+  //   _configureLimits(_maximumDepositAmount);
+  //   super._initialize();
+  // }
+
+  function initializeProjects() public onlyMultisig {
+    _initializeProjects();
+  }
+
   function createProject(
     Account memory _account,
     string memory _title,
