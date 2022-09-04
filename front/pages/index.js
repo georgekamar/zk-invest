@@ -53,16 +53,6 @@ const loadProjects = async (zkInvest, setProjects, setProjectTokens, setProjects
 
 }
 
-const handleConnect = (metamaskProvider, setAccountConnectWaiting, setProviderError, handleAccountsChanged) => {
-  if(metamaskProvider){
-    setAccountConnectWaiting(true);
-    metamaskProvider.request({ method: 'eth_accounts' })
-    .then(handleAccountsChanged)
-  }else{
-    setProviderError('Cannot find provider, try reloading the page');
-  }
-}
-
 
 const handleRegistrationConfirmation = async (signer, account, setAccount, setAccountError, setAccountRegistrationClicked) => {
   setAccountRegistrationClicked(false);
@@ -157,6 +147,7 @@ export default function Home() {
   const [projectTokenWithdrawal, setProjectTokenWithdrawal] = useState(false);
 
 
+
   const handleProviderDisconnected = () => {
     setProviderError('Provider disconnected, please check your connection and reload the page');
   }
@@ -195,6 +186,65 @@ export default function Home() {
         setAccountRegistrationLoading(false);
       });
 
+    }
+
+  }
+
+  const setupProvider = async () => {
+
+    let provider;
+    try{
+      provider = await detectEthereumProvider();
+      if(provider){
+        // From now on, this should always be true:
+        // provider === window.ethereum
+        const provider = await detectEthereumProvider();
+        if(provider !== window.ethereum){
+          setProviderError('Multiple wallets installed');
+          setProviderLoading(false);
+        }else{
+          const chainId = await provider.request({ method: 'eth_chainId' });
+          //process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN != 'Y' &&
+          if(chainId !== '0x5' && ((process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN != 'Y') || (process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN == 'Y' && chainId !== '0x7a69'))){    // Goerli chain
+            setProviderError('Current chain not supported, please switch to Goerli Network');
+          }
+          setMetamaskProvider(provider);
+          const ethersProviderTemp = new providers.Web3Provider(provider);
+          setEthersProvider(ethersProviderTemp);
+          setProviderLoading(false);
+          provider.on('chainChanged', handleChainChanged);
+          provider.on('disconnect', handleProviderDisconnected);
+          return Promise.resolve(ethersProviderTemp);
+        }
+      }else{
+        setProviderError('MetaMask is not installed');
+        setProviderLoading(false);
+        return Promise.resolve(null);
+      }
+    }catch(error){
+      return Promise.resolve(null);
+    }
+
+  }
+
+  const handleConnect = async () => {
+    if(ethersProvider){
+      setAccountConnectWaiting(true);
+      try{
+        const accounts = await ethersProvider.send('eth_requestAccounts', [])
+        handleAccountsChanged(accounts);
+      }catch(e){
+        setProviderError('Cannot find provider, try reloading the page');
+      }
+    }else{
+      const provider = await setupProvider();
+      if(provider){
+        setAccountConnectWaiting(true);
+        provider.send('eth_requestAccounts', [])
+        .then(handleAccountsChanged)
+      }else{
+        setProviderError('Cannot find provider, try reloading the page');
+      }
     }
 
   }
@@ -310,11 +360,11 @@ export default function Home() {
 
   useEffect(() => {
     if(ethersProvider){
-      const zkInvestTemp = new Contract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x8FF6660eC2F6785B9895E6eDbe447aa6BF196B4d', ZkInvestContract.abi, ethersProvider);
+      const zkInvestTemp = new Contract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0xB120E734055F02E3c45BF992b834162D13418d03', ZkInvestContract.abi, ethersProvider);
       const zkInvestTokenTemp = new Contract(process.env.NEXT_PUBLIC_TOKEN_ADDRESS || '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6', ZkTokenContract.abi, ethersProvider)
       setZkInvestToken(zkInvestTokenTemp)
       setZkInvest(zkInvestTemp);
-      const zkInvestProjectsTokenTemp = new Contract(process.env.NEXT_PUBLIC_PROJECT_TOKENS_ADDRESS || '0x7c03d0fB2819B3587B3Ba8dAD13232EB2DfFD59D', OwnableERC1155Contract.abi, ethersProvider)
+      const zkInvestProjectsTokenTemp = new Contract(process.env.NEXT_PUBLIC_PROJECT_TOKENS_ADDRESS || '0x0825be318dAfc77A0090249ad2358c190fa820DB', OwnableERC1155Contract.abi, ethersProvider)
       setZkInvestProjectsToken(zkInvestProjectsTokenTemp);
       setSigner(zkInvestTemp.connect(ethersProvider.getSigner()));
       setTokenSigner(zkInvestTokenTemp.connect(ethersProvider.getSigner()));
@@ -420,41 +470,7 @@ export default function Home() {
 
   useEffect(() => {
 
-    (async () => {
-
-      try{
-
-        const provider = await detectEthereumProvider();
-
-        if(provider){
-          // From now on, this should always be true:
-          // provider === window.ethereum
-          if(provider !== window.ethereum){
-            setProviderError('Multiple wallets installed');
-            setProviderLoading(false);
-          }else{
-            const chainId = await provider.request({ method: 'eth_chainId' });
-            //process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN != 'Y' &&
-            if(chainId !== '0x5' && ((process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN != 'Y') || (process.env.NEXT_PUBLIC_ALLOW_LOCAL_CHAIN == 'Y' && chainId !== '0x7a69'))){    // Goerli chain
-              setProviderError('Current chain not supported, please switch to Goerli Network');
-            }
-            setMetamaskProvider(provider);
-            const ethersProviderTemp = new providers.Web3Provider(provider);
-            setEthersProvider(ethersProviderTemp);
-            setProviderLoading(false);
-            provider.on('chainChanged', handleChainChanged);
-            provider.on('disconnect', handleProviderDisconnected);
-          }
-        }else{
-          setProviderError('MetaMask is not installed');
-          setProviderLoading(false);
-        }
-
-      }catch(error){
-
-      }
-
-    })();
+    setupProvider();
 
     // return () => {
     //   console.log('Removing listeners')
@@ -620,7 +636,7 @@ export default function Home() {
                     variant='contained'
                     size='small'
                     disabled={accountConnectWaiting}
-                    onClick={() => handleConnect(metamaskProvider, setAccountConnectWaiting, setProviderError, handleAccountsChanged)}
+                    onClick={() => handleConnect()}
                     style={{marginLeft: 'auto'}}
                   >
                     Connect
