@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { BigNumber, Contract, providers, utils } from 'ethers';
 import detectEthereumProvider from "@metamask/detect-provider"
 
@@ -112,7 +112,7 @@ export default function Home() {
   const [accountLoading, setAccountLoading] = useState(false);
   const [accountError, setAccountError] = useState(null);
   const [account, setAccount] = useState(null);
-  const [myProject, setMyProject] = useState(null);
+  const [myProject, _setMyProject] = useState(null);
 
   const [accountConnectWaiting, setAccountConnectWaiting] = useState(false);
   const [accountRegistrationLoading, setAccountRegistrationLoading] = useState(false);
@@ -133,8 +133,8 @@ export default function Home() {
 
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState(null);
-  const [projects, setProjects] = useState();
-  const [projectTokens, setProjectTokens] = useState();
+  const [projects, _setProjects] = useState();
+  const [projectTokens, _setProjectTokens] = useState();
 
   const [creatingProject, setCreatingProject] = useState(false);
   const [withdrawingFunds, setWithdrawingFunds] = useState(false);
@@ -146,7 +146,24 @@ export default function Home() {
 
   const [projectTokenWithdrawal, setProjectTokenWithdrawal] = useState(false);
 
+  const projectsRef = useRef(projects);
+  const projectTokensRef = useRef(projectTokens);
+  const myProjectRef = useRef(myProject);
 
+  const setProjects = (x) => {
+    projectsRef.current = x;
+    _setProjects(x);
+  };
+
+  const setProjectTokens = (x) => {
+    projectTokensRef.current = x;
+    _setProjectTokens(x);
+  };
+
+  const setMyProject = (x) => {
+    myProjectRef.current = x;
+    _setMyProject(x);
+  };
 
   const handleProviderDisconnected = () => {
     setProviderError('Provider disconnected, please check your connection and reload the page');
@@ -231,7 +248,7 @@ export default function Home() {
     if(ethersProvider){
       setAccountConnectWaiting(true);
       try{
-        const accounts = await ethersProvider.send('eth_requestAccounts', [])
+        const accounts = await ethersProvider.send('eth_requestAccounts', []);
         handleAccountsChanged(accounts);
       }catch(e){
         setProviderError('Cannot find provider, try reloading the page');
@@ -277,6 +294,26 @@ export default function Home() {
     setProjectTokenWithdrawal(tokenId);
   }
 
+  // const handleOnProjectCreated = async (newProjectCreator, newProjectTokenId, newProjectTitle, newProjectDescription) => {
+  //   let tempProjects = projectsRef.current;
+  //   let tempProjectTokens = projectTokensRef.current;
+  //   if(tempProjectTokens && tempProjects && !tempProjects?.find(pr => pr?.tokenId.eq(newProjectTokenId))){
+  //     tempProjects.unshift({
+  //       creator: newProjectCreator,
+  //       description: newProjectDescription,
+  //       title: newProjectTitle,
+  //       tokenId: newProjectTokenId
+  //     });
+  //     setProjects(tempProjects);
+  //     const newProjectToken = await zkInvest.projectTokens(newProjectTokenId);
+  //     tempProjectTokens.push({
+  //       id: newProjectToken.id,
+  //       value: newProjectToken.value
+  //     });
+  //     setProjectTokens(tempProjectTokens);
+  //   }
+  // }
+
   useEffect(() => {
     if(account?.isRegistered && projects?.length && !myProject){
       setMyProject((projects || [])?.find(project => project?.creator?.publicKey === account?.keypair?.address()))
@@ -287,13 +324,8 @@ export default function Home() {
   useEffect(() => {
     if(zkInvest){
       loadProjects(zkInvest, setProjects, setProjectTokens, setProjectsLoading, setProjectsError);
-      metamaskProvider.on('accountsChanged', handleAccountsChanged);
-      // zkInvest.on("NewProjectCreated", (newProjectEvent) => {
-      //   console.log("New Project Created")
-      //   const newProject = abiCoder.decode([ "bytes creator", "uint256 tokenId", "string title", "string description" ], newProjectEvent);
-      //   console.log(newProject);
-      //   // setProjects([newProjectEvent?.args, ...(projects?.length ? [projects] : [])]);
-      // })
+      metamaskProvider.on('accountsChanged', () => window.location.reload());
+      // zkInvest.on("NewProjectCreated", handleOnProjectCreated);
       // zkInvest.on("NewCommitment", async (newCommitmentEvent) => {
       //   console.log("New Commitment")
       //   console.log(newCommitmentEvent?.args);
@@ -419,9 +451,9 @@ export default function Home() {
             // console.log(event)
             let pendingCommitmentUtxo = Utxo.decrypt(account?.keypair, event.args.encryptedOutput, event.args.index);
             // Make sure commitment still pending
-            const pendingSisterCommitmentUtxo = await zkInvest.pendingCommitmentToCommitment(pendingCommitmentUtxo.getCommitment());
+            const pendingSisterCommitment = await zkInvest.pendingCommitmentToCommitment(pendingCommitmentUtxo.getCommitment());
 
-            if(!BigNumber.from(0).eq(pendingSisterCommitmentUtxo)){
+            if(!BigNumber.from(0).eq(pendingSisterCommitment) && !BigNumber.from(0).eq(pendingCommitmentUtxo?.amount)){
               let willBeNullified = false;
               try{
                 willBeNullified = await zkInvest.pendingNullifierHashes(pendingCommitmentUtxo.getNullifier());
@@ -587,7 +619,7 @@ export default function Home() {
                   providerError ||
                   accountError
                 ) ?
-                <Typography color='error'>{providerError || accountError}</Typography> :
+                <Typography style={{marginLeft: 'auto'}} color='error'>{providerError || accountError}</Typography> :
                 (
                   account ?
                   (
@@ -660,91 +692,97 @@ export default function Home() {
               providerError ?
               <Typography color='error'>{providerError}</Typography> :
               <div className={styles.grid} style={{width: '100%'}}>
-                {
-                  (
-                    accountLoading ||
-                    accountRegistrationLoading ||
-                    accountInformationLoading
-                  ) ?
-                  <Typography>Loading Acccount ...</Typography> :
-                  (
-                    accountError ?
-                    <Typography color='error'>{accountError}</Typography> :
-                    <div style={{width: '50%', backgroundColor: '#AAA'}}>
-                      <div style={{display: 'flex', flexDirection: 'row'}}>
-                        <Typography>Investments</Typography>
-                      </div>
-                      {
-                        account ?
-                        (
-                          account?.isRegistered ?
+                <div style={{width: '50%', backgroundColor: '#AAA', padding: '0.5em'}}>
+                  <div style={{display: 'flex', flexDirection: 'row', borderBottom: '1px solid #fff', marginBottom: 10}}>
+                    <Typography>Investments</Typography>
+                  </div>
+                  {
+                    (
+                      accountLoading ||
+                      accountRegistrationLoading ||
+                      accountInformationLoading
+                    ) ?
+                    <div style={{}}>
+                      <Typography>Loading Acccount ...</Typography>
+                    </div> :
+                    (
+                      accountError ?
+                      <Typography color='error'>{accountError}</Typography> :
+                      <div>
+                        {
+                          account ?
                           (
+                            account?.isRegistered ?
                             (
-                              (Object.keys(shieldedBalances || {})?.length > 1) ||
-                              (pendingCancellableCommitmentUtxos?.length > 0)
-                            ) ?
-                            <div style={{backgroundColor: '#CCC'}}>
-                              {
-                                (pendingCancellableCommitmentUtxos?.length > 0) &&
-                                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-                                  <Typography>Pending: {utils.formatEther(pendingOutgoingBalances?.[0])} WETH</Typography>
-                                  <Button
-                                    variant='contained'
-                                    size='small'
-                                    onClick={handlePendingInvestments}
-                                  >
-                                    View
-                                  </Button>
-                                </div>
-                              }
-                              {
-                                (Object.keys(shieldedBalances || {})?.length > 1) &&
-                                <div>
-                                  <Typography>Confirmed</Typography>
-                                  {
-                                    Object.keys(shieldedBalances || {})?.map((tokenId) => {
-                                      if(tokenId != 0){
-                                        const project = projects?.find(pr => pr?.tokenId.eq(BigNumber.from(tokenId)));
-                                        return (
-                                          <div key={tokenId} style={{backgroundColor: '#999', borderRadius: 10, margin: 5, padding: 5}}>
-                                            <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                                              <div>
-                                                {/* <Typography><b>Your Project</b></Typography> */}
-                                                <Typography>{project?.title}</Typography>
-                                                <Typography>{projects?.description}</Typography>
-                                                <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => tok?.id.eq(BigNumber.from(tokenId)))?.value)}</Typography>
-                                                <Typography>Balance: {shieldedBalances[tokenId]?.toString()}</Typography>
+                              (
+                                (Object.keys(shieldedBalances || {})?.length > 1) ||
+                                (pendingCancellableCommitmentUtxos?.length > 0)
+                              ) ?
+                              <div>
+                                {
+                                  (pendingCancellableCommitmentUtxos?.length > 0) &&
+                                  <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, borderBottom: '1px solid #fff'}}>
+                                    <Typography>Pending: {utils.formatEther(pendingOutgoingBalances?.[0])} WETH</Typography>
+                                    <Button
+                                      variant='contained'
+                                      size='small'
+                                      onClick={handlePendingInvestments}
+                                    >
+                                      View
+                                    </Button>
+                                  </div>
+                                }
+                                {
+                                  (Object.keys(shieldedBalances || {})?.length > 1) &&
+                                  <div style={{marginTop: 10}}>
+                                    <Typography>Confirmed</Typography>
+                                    {
+                                      Object.keys(shieldedBalances || {})?.map((tokenId) => {
+                                        if(tokenId != 0){
+                                          const project = projects?.find(pr => pr?.tokenId.eq(BigNumber.from(tokenId)));
+                                          return (
+                                            <div key={tokenId} style={{backgroundColor: '#999', borderRadius: 10, margin: 5, padding: 5}}>
+                                              <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+                                                <div>
+                                                  {/* <Typography><b>Your Project</b></Typography> */}
+                                                  <Typography>{project?.title}</Typography>
+                                                  <Typography>{projects?.description}</Typography>
+                                                  <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => BigNumber.isBigNumber(project?.tokenId) && tok?.id?.eq(BigNumber.from(tokenId)))?.value)} WETH</Typography>
+                                                  <Typography>Balance: {shieldedBalances[tokenId]?.toString()} Tokens</Typography>
+                                                </div>
+                                                <Button
+                                                  variant='contained'
+                                                  size='small'
+                                                  onClick={() => handleProjectTokenWithdrawal(tokenId)}
+                                                  style={{marginLeft: 'auto', marginRight: 5}}
+                                                >
+                                                  Withdraw
+                                                </Button>
                                               </div>
-                                              <Button
-                                                variant='contained'
-                                                size='small'
-                                                onClick={() => handleProjectTokenWithdrawal(tokenId)}
-                                                style={{marginLeft: 'auto', marginRight: 5}}
-                                              >
-                                                Withdraw
-                                              </Button>
                                             </div>
-                                          </div>
-                                        );
-                                      }
-                                    })
-                                  }
-                                </div>
-                              }
-                            </div> :
-                            <Typography>You have not invested in any project yet</Typography>
+                                          );
+                                        }
+                                      })
+                                    }
+                                  </div>
+                                }
+                              </div> :
+                              <Typography>You have not invested in any project yet</Typography>
+                            ) :
+                            <Typography>No account registered yet</Typography>
                           ) :
-                          <Typography>No account registered yet</Typography>
-                        ) :
-                        <Typography>Please connect your account</Typography>
-                      }
-                    </div>
-                  )
-                }
+                          <Typography>Please connect your account</Typography>
+                        }
+                      </div>
+                    )
+                  }
+                </div>
 
-                <div style={{width: '50%', backgroundColor: '#EEE'}}>
+                <div style={{width: '50%', backgroundColor: '#EEE', padding: '0.5em'}}>
                   <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                    <Typography color='#555' style={{textAlign: 'center'}}>Projects</Typography>
+                    <div style={{width: '100%', borderBottom: '1px solid #555', marginBottom: 10}}>
+                      <Typography color='#555'>Projects</Typography>
+                    </div>
                     {
                       account?.isRegistered &&
                       !myProject &&
@@ -773,13 +811,34 @@ export default function Home() {
                               <Typography><b>Your Project</b></Typography>
                               <Typography>{myProject?.title}</Typography>
                               <Typography>{myProject?.description}</Typography>
-                              <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => tok?.id.eq(myProject?.tokenId))?.value)}</Typography>
+                              <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => BigNumber.isBigNumber(myProject?.tokenId) && tok?.id?.eq(myProject?.tokenId))?.value)} WETH</Typography>
                               <Button
                                 variant='contained'
                                 size='small'
-                                color='warning'
+                                disabled={
+                                  (
+                                    accountLoading ||
+                                    accountRegistrationLoading ||
+                                    accountInformationLoading
+                                  )
+                                }
+                                style={
+                                  (
+                                    accountLoading ||
+                                    accountRegistrationLoading ||
+                                    accountInformationLoading
+                                  ) ?
+                                  {
+                                    backgroundColor: '#ddd',
+                                    color: '#999'
+                                  } :
+                                  {
+                                    backgroundColor: '#fff',
+                                    color: 'rgb(53, 118, 200)'
+                                  }
+                                }
                                 onClick={handleViewMyProjectInvestments}
-                                style={{alignSelf: 'center'}}
+                                // style={{alignSelf: 'center'}}
                               >
                                 View Investments
                               </Button>
@@ -796,39 +855,42 @@ export default function Home() {
                           </div>
                         }
                         {
-                          projects.map((project, i) => (
-                            (
-                              !myProject ||
-                              !project.tokenId.eq(myProject?.tokenId)
-                            ) &&
-                            <div key={i.toString()} style={{backgroundColor: '#999', borderRadius: 10, margin: 5, padding: 5}}>
-                              <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                                <div>
-                                  {/* <Typography><b>Your Project</b></Typography> */}
-                                  <Typography>{project?.title}</Typography>
-                                  <Typography>{project?.description}</Typography>
-                                  <Typography>Token Value: {utils.formatEther(projectTokens?.find(tok => tok?.id.eq(project?.tokenId))?.value)}</Typography>
+                          projects.map((project, i) => {
+                            const token = projectTokens?.find(tok => BigNumber.isBigNumber(project?.tokenId) && tok?.id?.eq(project?.tokenId));
+                            return (
+                              (
+                                !myProject ||
+                                !project.tokenId.eq(myProject?.tokenId)
+                              ) &&
+                              <div key={i.toString()} style={{backgroundColor: '#999', borderRadius: 10, margin: 5, padding: 5}}>
+                                <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
+                                  <div>
+                                    {/* <Typography><b>Your Project</b></Typography> */}
+                                    <Typography>{project?.title}</Typography>
+                                    <Typography>{project?.description}</Typography>
+                                    <Typography>Token Value: {token?.value ? utils.formatEther(token?.value) : 0} WETH</Typography>
+                                  </div>
+                                  {
+                                    (
+                                      !accountLoading &&
+                                      !accountRegistrationLoading &&
+                                      !accountInformationLoading &&
+                                      !accountError &&
+                                      account?.isRegistered
+                                    ) &&
+                                    <Button
+                                      variant='contained'
+                                      size='small'
+                                      onClick={() => handleInvest(project)}
+                                      style={{marginLeft: 'auto', marginRight: 5}}
+                                    >
+                                      Invest
+                                    </Button>
+                                  }
                                 </div>
-                                {
-                                  (
-                                    !accountLoading &&
-                                    !accountRegistrationLoading &&
-                                    !accountInformationLoading &&
-                                    !accountError &&
-                                    account?.isRegistered
-                                  ) &&
-                                  <Button
-                                    variant='contained'
-                                    size='small'
-                                    onClick={() => handleInvest(project)}
-                                    style={{marginLeft: 'auto', marginRight: 5}}
-                                  >
-                                    Invest
-                                  </Button>
-                                }
                               </div>
-                            </div>
-                          ))
+                            )
+                          })
                         }
                       </div>
                     )

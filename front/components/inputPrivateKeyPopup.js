@@ -14,9 +14,6 @@ export default function InputPrivateKeyPopup(props) {
     let keypair;
     try {
       keypair = new Keypair(privInput);
-    }catch(e){
-      setError('Private Key Not Valid');
-    }finally{
       try{
         localStorage.setInput(props?.account.address, privInput);
         props?.setAccount({
@@ -27,6 +24,8 @@ export default function InputPrivateKeyPopup(props) {
       }catch(e){
         window.location.reload();
       }
+    }catch(e){
+      setError('Private Key Not Valid');
     }
   }
 

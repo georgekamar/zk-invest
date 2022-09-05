@@ -140,7 +140,7 @@ contract ZkInvest is TornadoPool {
     projectOwnerToToken[_account.owner] = newProjectTokenId;
     projectTokens.push(ProjectToken(newProjectTokenId, _tokenValue));
     projects.push(Project(_account, newProjectTokenId, _title, _description));
-    NewProjectCreated(_account.publicKey, newProjectTokenId, _title, _description);
+    emit NewProjectCreated(_account.publicKey, newProjectTokenId, _title, _description);
   }
 
   function verifyProjectTokenTransferProof(ProjectTokenTransferProof memory _args) public view returns (bool) {

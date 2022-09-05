@@ -5,12 +5,15 @@ import Utxo from '../lib/utxo';
 import { utxosToNullify } from '../lib/utils';
 import { transaction } from '../lib';
 
+import DotsComponent from './dots';
+
 import styles from '../styles/Popups.module.css';
 
 export default function WithdrawalPopup(props) {
 
   const [error, setError] = useState();
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState();
 
   const [tokenAmount, setTokenAmount] = useState();
   const [withdrawAddress, setWithdrawAddress] = useState();
@@ -45,6 +48,7 @@ export default function WithdrawalPopup(props) {
     setLoading(true);
     try{
       const withdrawOutputUtxo = new Utxo({ tokenId: props?.tokenId, amount: newShieldedBalance, keypair: props?.account?.keypair });
+      setLoadingMessage('Generating proof and awaiting signature');
       await transaction({
         zkInvest: props?.signer,
         inputs: utxosToNullify(props?.inputs, parsedTokenAmount),
@@ -52,9 +56,10 @@ export default function WithdrawalPopup(props) {
         recipient: withdrawAddress
       })
       props?.hidePopup();
+      window.location.reload();
     }catch(error){
       console.log(error)
-      if(error?.code === 4001){
+      if(error?.code == 'ACTION_REJECTED'){
         setError('Transaction signature was refused')
       }else{
         setError('There was a problem with your deposit, try reloading the page and retrying');
@@ -80,6 +85,7 @@ export default function WithdrawalPopup(props) {
         <div className={styles.popupHeader}>
           <Button color='error' disabled={loading} style={{marginLeft: 'auto'}} onClick={() => props?.hidePopup()}>x</Button>
           <Typography color='#444'>Withdraw Funds</Typography>
+          <Typography color='#444'>Your balance: {props?.tokenId == 0 ? utils.formatEther(props?.shieldedBalance) : props?.shieldedBalance?.toString()} {props?.tokenId == 0 ? '(WETH)': 'tokens'}</Typography>
         </div>
         <Typography color='error'>{error}</Typography>
         <TextField
@@ -101,6 +107,16 @@ export default function WithdrawalPopup(props) {
           Withdraw
         </Button>
       </div>
+      {
+        loading &&
+        <div className={styles.loadingContainer}>
+          <div className={styles.loading}>
+            <Typography>
+              {loadingMessage}<DotsComponent />
+            </Typography>
+          </div>
+        </div>
+      }
     </div>
 
   );

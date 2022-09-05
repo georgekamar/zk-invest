@@ -6,12 +6,15 @@ import Utxo from '../lib/utxo';
 import { Keypair } from '../lib/keypair';
 import { acceptInvestment } from '../lib';
 
+import DotsComponent from './dots';
+
 import styles from '../styles/Popups.module.css';
 
 export default function PendingIncomingInvestmentsPopup(props) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState();
 
   const handleAcceptInvestment = async (utxo) => {
 
@@ -26,6 +29,7 @@ export default function PendingIncomingInvestmentsPopup(props) {
         keypair: Keypair.fromString(utxo.srcEncryptionAddress)//{pubkey: projectReceiveUtxo.srcPubKey}
       })
 
+      setLoadingMessage('Generating proof and awaiting signature');
       await acceptInvestment({
         zkInvest: props?.signer,
         utxoReceived: utxo,
@@ -33,9 +37,11 @@ export default function PendingIncomingInvestmentsPopup(props) {
         projectTokenValue: props?.projectToken.value
       })
 
+      window.location.reload();
+
     }catch(error){
       console.log(error)
-      if(error?.code === 4001){
+      if(error?.code == 'ACTION_REJECTED'){
         setError('Transaction signature was refused')
       }else{
         setError('There was a problem accepting this investment, try reloading the page and retrying');
@@ -52,15 +58,16 @@ export default function PendingIncomingInvestmentsPopup(props) {
       <div className={styles.popupContainer}>
         <div className={styles.popupHeader}>
           <Button color='error' disabled={loading} style={{marginLeft: 'auto'}} onClick={() => props?.hidePopup()}>x</Button>
-          <Typography color="#555">Investments Awaiting Approval</Typography>
+          <Typography color="#555">Investments Awaiting Your Approval</Typography>
         </div>
         <Typography color='error'>{error}</Typography>
         <div style={{overflowY: 'scroll'}}>
           {
+            props?.pendingIncomingCommitmentUtxos?.length ?
             props?.pendingIncomingCommitmentUtxos?.map((utxo, i) => (
-              <div key={i.toString()} style={{backgroundColor: '#999', borderRadius: 10, margin: 5, padding: 5}}>
+              <div key={i.toString()} style={{backgroundColor: '#FFF', borderRadius: 10, margin: 5, padding: 5}}>
                 <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                  <Typography>Amount: {utils.formatEther(utxo?.amount)} WETH</Typography>
+                  <Typography color='#888'>Amount: {utils.formatEther(utxo?.amount)} WETH</Typography>
                   <Button
                     variant='contained'
                     size='small'
@@ -72,11 +79,22 @@ export default function PendingIncomingInvestmentsPopup(props) {
                   </Button>
                 </div>
               </div>
-            ))
+            )) :
+            <Typography color="#555">There are no investments awaiting your approval</Typography>
           }
         </div>
         <p style={{color: 'transparent'}}>-</p>
       </div>
+      {
+        loading &&
+        <div className={styles.loadingContainer}>
+          <div className={styles.loading}>
+            <Typography>
+              {loadingMessage}<DotsComponent />
+            </Typography>
+          </div>
+        </div>
+      }
     </div>
 
   );

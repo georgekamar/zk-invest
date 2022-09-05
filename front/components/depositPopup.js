@@ -4,15 +4,17 @@ import { Button, TextField, Typography } from '@mui/material';
 import Utxo from '../lib/utxo';
 import { transaction } from '../lib';
 
+import DotsComponent from './dots';
+
 import styles from '../styles/Popups.module.css';
 
 export default function DepositPopup(props) {
 
   const [error, setError] = useState();
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState();
 
   const [tokenAmount, setTokenAmount] = useState();
-
 
   const handleSubmitDeposit = async () => {
 
@@ -28,6 +30,7 @@ export default function DepositPopup(props) {
     }
 
     setLoading(true);
+    setLoadingMessage('Awaiting token transfer approval');
     try{
       // console.log(props)
       // console.log(parsedTokenAmount)
@@ -35,15 +38,18 @@ export default function DepositPopup(props) {
 
       await props?.tokenSigner.approve(props?.zkInvest.address, parsedTokenAmount);
 
+      setLoadingMessage('Generating proof and awaiting signature');
+
       await transaction({
         zkInvest: props?.signer,
         inputs: [],
         outputs: [depositUtxo]
       })
       props?.hidePopup();
+      window.location.reload();
     }catch(error){
       console.log(error)
-      if(error?.code === 4001){
+      if(error?.code == 'ACTION_REJECTED'){
         setError('Transaction signature was refused')
       }else{
         setError('There was a problem with your deposit, try reloading the page and retrying');
@@ -81,6 +87,16 @@ export default function DepositPopup(props) {
           Deposit
         </Button>
       </div>
+      {
+        loading &&
+        <div className={styles.loadingContainer}>
+          <div className={styles.loading}>
+            <Typography>
+              {loadingMessage}<DotsComponent />
+            </Typography>
+          </div>
+        </div>
+      }
     </div>
   )
 }

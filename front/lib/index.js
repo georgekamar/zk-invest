@@ -171,7 +171,11 @@ async function prepareTransaction({
     inputs.push(new Utxo({tokenId: publicTokenId}))
   }
   while (outputs.length < 2) {
-    outputs.push(new Utxo({tokenId: publicTokenId}))
+    if(isInvestment){
+      outputs.push(new Utxo({tokenId: publicTokenId, srcEncryptionAddress: outputs?.[0]?.srcEncryptionAddress}))
+    }else{
+      outputs.push(new Utxo({tokenId: publicTokenId}))
+    }
   }
 
   let extAmount = BigNumber.from(fee)

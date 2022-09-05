@@ -124,14 +124,14 @@ function calculateBalances(utxos){
 
 function addBalances(balances1, balances2){
   let newBalances = {};
-  for(let tokenId in Object.keys(balances1 || {})){
+  for(let tokenId of Object.keys(balances1 || {})){
     if(balances2?.[tokenId]){
       newBalances[tokenId] = balances1[tokenId].add(balances2[tokenId]);
     }else{
       newBalances[tokenId] = balances1[tokenId];
     }
   }
-  for(let tokenId2 in Object.keys(balances2 || {})){
+  for(let tokenId2 of Object.keys(balances2 || {})){
     if(!newBalances?.[tokenId2]){
       newBalances[tokenId2] = balances2[tokenId2];
     }
@@ -141,14 +141,14 @@ function addBalances(balances1, balances2){
 
 function subBalances(balances1, balances2){
   let newBalances = {};
-  for(let tokenId in Object.keys(balances1 || {})){
+  for(let tokenId of Object.keys(balances1 || {})){
     if(balances2?.[tokenId]){
       newBalances[tokenId] = balances1[tokenId].sub(balances2[tokenId]);
     }else{
       newBalances[tokenId] = balances1[tokenId];
     }
   }
-  for(let tokenId in Object.keys(balances2 || {})){
+  for(let tokenId of Object.keys(balances2 || {})){
     if(!newBalances?.[tokenId]){
       newBalances[tokenId] = balances2[tokenId].mul(BigNumber.from(-1));
     }

@@ -3,6 +3,8 @@ import { BigNumber, utils } from 'ethers';
 import { Button, TextField, Typography } from '@mui/material';
 // import { createProject } from '../lib';
 
+import DotsComponent from './dots';
+
 import styles from '../styles/Popups.module.css';
 
 async function createProject({ zkInvest, account, title, description, tokenValue }) {
@@ -16,6 +18,7 @@ export default function CreateProjectPopup(props) {
 
   const [error, setError] = useState();
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState();
 
   const [title, setTitle] = useState();
   const [description, setDescription] = useState();
@@ -56,6 +59,8 @@ export default function CreateProjectPopup(props) {
     }
 
     setLoading(true);
+    setLoadingMessage('Awaiting signature');
+
     try{
       await createProject({
         zkInvest: props?.signer,
@@ -68,9 +73,10 @@ export default function CreateProjectPopup(props) {
         tokenValue: parsedTokenValue
       })
       props?.hidePopup();
+      window.location.reload();
     }catch(error){
       console.log(error)
-      if(error?.code === 4001){
+      if(error?.code == 'ACTION_REJECTED'){
         setError('Transaction signature was refused')
       }else{
         setError('There was a problem with your deposit, try reloading the page and retrying');
@@ -126,6 +132,16 @@ export default function CreateProjectPopup(props) {
           Submit
         </Button>
       </div>
+      {
+        loading &&
+        <div className={styles.loadingContainer}>
+          <div className={styles.loading}>
+            <Typography>
+              {loadingMessage}<DotsComponent />
+            </Typography>
+          </div>
+        </div>
+      }
     </div>
 
   )
