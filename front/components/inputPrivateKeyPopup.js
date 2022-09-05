@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, TextField, Typography } from '@mui/material';
 
+import { Keypair } from '../lib/keypair';
 
 import styles from '../styles/Popups.module.css';
 
@@ -10,21 +11,24 @@ export default function InputPrivateKeyPopup(props) {
   const [privInput, setPrivInput] = useState();
 
 
-  const handleSubmitPrivateKey = (privInput) => {
+  const handleSubmitPrivateKey = () => {
     let keypair;
     try {
       keypair = new Keypair(privInput);
       try{
-        localStorage.setInput(props?.account.address, privInput);
+        localStorage.setItem(props?.account.address, privInput);
         props?.setAccount({
-          ...account,
+          ...props?.account,
           keypair
         });
         props?.setLocalPrivateKeyNotFound(false);
-      }catch(e){
         window.location.reload();
+      }catch(e){
+        console.log(e)
+        setError('An error occured, try refreshing the page');
       }
-    }catch(e){
+    }catch(e2){
+      console.log(e2)
       setError('Private Key Not Valid');
     }
   }

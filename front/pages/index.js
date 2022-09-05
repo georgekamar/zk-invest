@@ -779,10 +779,8 @@ export default function Home() {
                 </div>
 
                 <div style={{width: '50%', backgroundColor: '#EEE', padding: '0.5em'}}>
-                  <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-                    <div style={{width: '100%', borderBottom: '1px solid #555', marginBottom: 10}}>
-                      <Typography color='#555'>Projects</Typography>
-                    </div>
+                  <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', borderBottom: '1px solid #555', marginBottom: 10}}>
+                    <Typography color='#555'>Projects</Typography>
                     {
                       account?.isRegistered &&
                       !myProject &&
