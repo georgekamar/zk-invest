@@ -1,4 +1,4 @@
-# ZK-Invest: Anonymously invest in a project or strategy
+# ZK-Invest: An Anonymous Decentralized Investment Platform Based on Zero-Knowledge
 
 -- Built in the context of Harmony's Zero Knowledge Univesity
 
