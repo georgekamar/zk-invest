@@ -37,28 +37,6 @@ In ZK-Invest, additional Zero Knowledge logic is required to solve the following
 
 For the implementation of the tokens, an Ownable ERC1155 token was implemented and is set to be owned by the ZK Investment Contract on contract initialization. The ERC1155 Standard allows the management (minting, transferring and burning) of different types of tokens, both fungible and non-fungible, within one contract. In this design, to preserve anonymity further, project tokens are only minted upon withdrawal, enabling users who receive them to freely trade them within the pool without even showing a balance on the contract.
 
-### To be improved
-
-##### Transacting with a project (invest)
-
-Currently, pending transactions from two output commitments are created on `transactWithProject`, and the nullifiers from the commitments used to create those outputs are marked as pending as well. This means that these not-yet-nullified commitments cannot be used in the meantime, even if the sum of their commitments is greater than the sum invested and that one of the output commitments is destined as "change" to the investor. In other words, an amount greater than the sum invested could be pending until the investment is accepted, unnecessarily locking a user's valid funds in the process. To solve this, if no exact commitment amounts exist in the user's commitments, a "breakup" transaction is created on the frontend previous to the project transaction to ensure there exists a valid commitment hash of the exact investment amount in the Merkle Tree that can be used alone to create the outputs. This solution often costs an extra transaction, and could be replaced with a better design of `transactWithProject`. Instead of creating two pending output commitments, `transactWithProject` could insert one of them in the tree, actually nullify the inputs, and make only the investment commitment pending and cancellable. This would slightly change the logic of the `acceptInvestment` and `cancelInvestment` functions as well accordingly.
-
-##### Encrypting destined transaction
-
-When a user accepts an investment from an investor, they submit a ZK proof that the commitment they are creating has the correct amount of tokens and that those tokens will only be "ownable" by the investor themself. However, there is currently no way to prove that the investor will encrypt the transaction using the investor's public key, making it very hard for the investor to retrieve their commitment should a malicious project owner decide not to make their transaction decryptable. The investor will know there exists a commitment of "x" amount in the tree that is destined to them, but will have to try all combinations of the random number hash input to prove they "own" that commitment. Only the existence of an encryption/decryption library in circom could solve this problem in the current project's high-level logic.
-
-##### Project token deposit and transfer
-
-No feature to deposit project tokens into the shielded pool is implemented and was beyond the scope of this project in the context of ZKU's Final Project, but implementing such a feature would not be challenging. Transferring tokens within the shielded pool is possible by transacting with the contract, but implementing the feature on the frontend was outside the scope of this project in the context of ZKU's Final Project, it also would not be challenging to implement.
-
-##### Project investment from outside the shielded pool
-
-The smart contract does not currently support directly investing in a project from a wallet. Users must first deposit into the shielded pool before being able to invest. This is due to the fact that pending commitments are not inserted in the Merkle tree, and cancelling investments simply "erase" the pending commitments and nullifiers, reverting their "nullification". If an amount was sent to the contract in such a transaction, reverting it would imply implementing a mechanism to either send the amount back to that address, or insert a commitment of corresponding amount in the tree. Alternatively, this could be implemented on the frontend by sending two transactions to the blockchain: one for the deposit and one for the investment.
-
-##### Divisibility of project investment
-
-To prove that a user who accepts an investment will send the correct amount of tokens to the investor, a naive constraint is added in circom that multiplies the inputted token value by the  token amount to be sent and ensures it is equal to the inputted investment amount. Float manipulation being subject to overflow errors and lack of precision, the frontend ensures that the division of the investment amount by the token value leaves no remainder to avoid aforementioned problems. This isn't the best user experience and a solution could be found to this, either by automatically calculating the remainder on the frontend and not including it in the investment, or by finding a more robust constraint in circom that could flawlessly handle floats.
-
 # Run Locally
 
 ## Clone the repository
@@ -99,3 +77,27 @@ yarn start
 The browser should open a new window on http://localhost:3000. Connect Metamask and switch to localhost network. Be sure to change your env variables accordingly ([see `/front/.env.example`](/front/.env.example)).
 
 More on the front-end [in the `/front` directory](/front/README.md)
+
+
+# To be improved
+
+#### Transacting with a project (invest)
+
+Currently, pending transactions from two output commitments are created on `transactWithProject`, and the nullifiers from the commitments used to create those outputs are marked as pending as well. This means that these not-yet-nullified commitments cannot be used in the meantime, even if the sum of their commitments is greater than the sum invested and that one of the output commitments is destined as "change" to the investor. In other words, an amount greater than the sum invested could be pending until the investment is accepted, unnecessarily locking a user's valid funds in the process. To solve this, if no exact commitment amounts exist in the user's commitments, a "breakup" transaction is created on the frontend previous to the project transaction to ensure there exists a valid commitment hash of the exact investment amount in the Merkle Tree that can be used alone to create the outputs. This solution often costs an extra transaction, and could be replaced with a better design of `transactWithProject`. Instead of creating two pending output commitments, `transactWithProject` could insert one of them in the tree, actually nullify the inputs, and make only the investment commitment pending and cancellable. This would slightly change the logic of the `acceptInvestment` and `cancelInvestment` functions as well accordingly.
+
+#### Encrypting destined transaction
+
+When a user accepts an investment from an investor, they submit a ZK proof that the commitment they are creating has the correct amount of tokens and that those tokens will only be "ownable" by the investor themself. However, there is currently no way to prove that the investor will encrypt the transaction using the investor's public key, making it very hard for the investor to retrieve their commitment should a malicious project owner decide not to make their transaction decryptable. The investor will know there exists a commitment of "x" amount in the tree that is destined to them, but will have to try all combinations of the random number hash input to prove they "own" that commitment. Only the existence of an encryption/decryption library in circom could solve this problem in the current project's high-level logic.
+
+#### Project token deposit and transfer
+
+No feature to deposit project tokens into the shielded pool is implemented and was beyond the scope of this project in the context of ZKU's Final Project, but implementing such a feature would not be challenging. Transferring tokens within the shielded pool is possible by transacting with the contract, but implementing the feature on the frontend was outside the scope of this project in the context of ZKU's Final Project, it also would not be challenging to implement.
+
+#### Project investment from outside the shielded pool
+
+The smart contract does not currently support directly investing in a project from a wallet. Users must first deposit into the shielded pool before being able to invest. This is due to the fact that pending commitments are not inserted in the Merkle tree, and cancelling investments simply "erase" the pending commitments and nullifiers, reverting their "nullification". If an amount was sent to the contract in such a transaction, reverting it would imply implementing a mechanism to either send the amount back to that address, or insert a commitment of corresponding amount in the tree. Alternatively, this could be implemented on the frontend by sending two transactions to the blockchain: one for the deposit and one for the investment.
+
+#### Divisibility of project investment
+
+To prove that a user who accepts an investment will send the correct amount of tokens to the investor, a naive constraint is added in circom that multiplies the inputted token value by the  token amount to be sent and ensures it is equal to the inputted investment amount. Float manipulation being subject to overflow errors and lack of precision, the frontend ensures that the division of the investment amount by the token value leaves no remainder to avoid aforementioned problems. This isn't the best user experience and a solution could be found to this, either by automatically calculating the remainder on the frontend and not including it in the investment, or by finding a more robust constraint in circom that could flawlessly handle floats.
+
