@@ -84,16 +84,24 @@ const config = {
     //       },
     // },
     hardhat: {
-      accounts: [
-        ...(process.env.PRIVATE_KEY ? [{
-          privateKey: process.env.PRIVATE_KEY,
-          balance: '10000000000000000000000'
-        }] : []),
-        ...(process.env.SECOND_PRIVATE_KEY ? [{
-          privateKey: process.env.SECOND_PRIVATE_KEY,
-          balance: '10000000000000000000000'
-        }] : []),
-      ]
+      ...(
+        (
+          process.env.PRIVATE_KEY ||
+          process.env.SECOND_PRIVATE_KEY
+        ) &&
+        {
+          accounts: [
+            ...(process.env.PRIVATE_KEY ? [{
+              privateKey: process.env.PRIVATE_KEY,
+              balance: '10000000000000000000000'
+            }] : []),
+            ...(process.env.SECOND_PRIVATE_KEY ? [{
+              privateKey: process.env.SECOND_PRIVATE_KEY,
+              balance: '10000000000000000000000'
+            }] : []),
+          ]
+        }
+      )
     },
     harmony_devnet: {
       url: process.env.HARMONY_DEVNET_RPC || 'https://api.s0.ps.hmny.io/',
