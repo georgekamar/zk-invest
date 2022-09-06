@@ -17,19 +17,18 @@ async function main() {
   // WETH (Goerli)
   const token = '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6';
 
-  const multisig = '0x8ECe2A05e0AdA6c70BA4a580EFf87f23D964723c'
+  const multisig = process.env.PUBLIC_KEY;
 
   // GOERLI Ethereum Testnet Deployment Addresses:
 
   // WETH token: 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6
   // multisig: 0x8ECe2A05e0AdA6c70BA4a580EFf87f23D964723c
-  // verifier2: 0xa2B62589e33F4ff44a490400cB147211D185e61F
-  // verifier16: 0x48D507B90442927bb564c401cC9C3af38Fb2f412
-  // projectTokenTransferVerifier: 0x1a341693a9E05e8f0Fb31e285C37BeC4F2A7c177
-  // hasher: 0xE3FC4546D478aD1C9D6B201968b4a15db8EEE2Dc
-  // ownableERC1155: 0x0825be318dAfc77A0090249ad2358c190fa820DB
-  // ZkInvest: 0xB120E734055F02E3c45BF992b834162D13418d03
-
+  // verifier2: 0x93d4011df17710d634274735A6bc7ab217Ff5320
+  // verifier16: 0xa058794dC57010F33abd95A50fD85De23D144b55
+  // projectTokenTransferVerifier: 0xBcEfd604eb61b24AE0b1422f4A17b2c2d3e7e5e4
+  // hasher: 0x80e45BDE393EB31c635b4D0D0aE1c46C59D924D4
+  // ownableERC1155: 0x22A14825dE24DFe3e57319CEE160013C00D30EE7
+  // ZkInvest: 0xFa1dF689cE3cE4c49eD2DC5afdb3C7179F11436A
 
   const Verifier2 = await ethers.getContractFactory('Verifier2')
   const verifier2 = await Verifier2.deploy()
@@ -99,7 +98,9 @@ async function main() {
   console.log(`ZK Invest implementation address: ${zkInvest.address}`)
 
 
-  ownableERC1155.changeOwner(zkInvest.address);
+  await ownableERC1155.changeOwner(zkInvest.address, {
+    gasLimit: 2e6
+  });
   console.log('Ownable ERC1155 owner changed to ZK Invest address');
 
   // const CrossChainUpgradeableProxy = await ethers.getContractFactory('CrossChainUpgradeableProxy')
@@ -107,17 +108,22 @@ async function main() {
   // await proxy.deployed()
   // console.log(`proxy address: ${proxy.address}`)
 
-  // const zkInvest = await Pool.attach('0xB120E734055F02E3c45BF992b834162D13418d03')
+  // const zkInvest = await Pool.attach('0xFa1dF689cE3cE4c49eD2DC5afdb3C7179F11436A')
   await zkInvest.initialize(
     // utils.parseEther(MINIMUM_WITHDRAWAL_AMOUNT),
     utils.parseEther(MAXIMUM_DEPOSIT_AMOUNT),
+    {
+      gasLimit: 2e6
+    }
   )
   console.log(
     // `Proxy initialized with MINIMUM_WITHDRAWAL_AMOUNT=${MINIMUM_WITHDRAWAL_AMOUNT} ETH and MAXIMUM_DEPOSIT_AMOUNT=${MAXIMUM_DEPOSIT_AMOUNT} ETH`,
     `Pool initialized with MAXIMUM_DEPOSIT_AMOUNT=${MAXIMUM_DEPOSIT_AMOUNT} ETH`,
   )
 
-  await zkInvest.initializeProjects();
+  await zkInvest.initializeProjects({
+    gasLimit: 2e6
+  });
 
   console.log('Projects Initialized');
 

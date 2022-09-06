@@ -65,7 +65,7 @@ export default function InvestmentPopup(props) {
         exactAmountUtxo = new Utxo({ amount: parsedTokenAmount, keypair: props?.account?.keypair });
         const changeUtxo = new Utxo({ amount: inputBalance.sub(parsedTokenAmount), keypair: props?.account?.keypair });
 
-        setLoadingMessage('Generating proof and awaiting commitment breakup transaction signature (1)');
+        setLoadingMessage('(1) Generating proof and awaiting commitment breakup transaction signature');
 
         await transaction({
           zkInvest: props?.signer,
@@ -73,7 +73,7 @@ export default function InvestmentPopup(props) {
           outputs: [exactAmountUtxo, changeUtxo]
         })
 
-        setLoadingMessage('Generating proof and awaiting investment signature (2)');
+        setLoadingMessage('(2) Generating proof and awaiting investment signature');
 
         await transactionWithProject({
           zkInvest: props?.signer,

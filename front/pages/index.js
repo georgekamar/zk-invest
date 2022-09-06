@@ -392,11 +392,11 @@ export default function Home() {
 
   useEffect(() => {
     if(ethersProvider){
-      const zkInvestTemp = new Contract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0xB120E734055F02E3c45BF992b834162D13418d03', ZkInvestContract.abi, ethersProvider);
+      const zkInvestTemp = new Contract(process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0xFa1dF689cE3cE4c49eD2DC5afdb3C7179F11436A', ZkInvestContract.abi, ethersProvider);
       const zkInvestTokenTemp = new Contract(process.env.NEXT_PUBLIC_TOKEN_ADDRESS || '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6', ZkTokenContract.abi, ethersProvider)
       setZkInvestToken(zkInvestTokenTemp)
       setZkInvest(zkInvestTemp);
-      const zkInvestProjectsTokenTemp = new Contract(process.env.NEXT_PUBLIC_PROJECT_TOKENS_ADDRESS || '0x0825be318dAfc77A0090249ad2358c190fa820DB', OwnableERC1155Contract.abi, ethersProvider)
+      const zkInvestProjectsTokenTemp = new Contract(process.env.NEXT_PUBLIC_PROJECT_TOKENS_ADDRESS || '0x22A14825dE24DFe3e57319CEE160013C00D30EE7', OwnableERC1155Contract.abi, ethersProvider)
       setZkInvestProjectsToken(zkInvestProjectsTokenTemp);
       setSigner(zkInvestTemp.connect(ethersProvider.getSigner()));
       setTokenSigner(zkInvestTokenTemp.connect(ethersProvider.getSigner()));
@@ -703,7 +703,7 @@ export default function Home() {
                       accountInformationLoading
                     ) ?
                     <div style={{}}>
-                      <Typography>Loading Acccount ...</Typography>
+                      <Typography>Loading Account ...</Typography>
                     </div> :
                     (
                       accountError ?

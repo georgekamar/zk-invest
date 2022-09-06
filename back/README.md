@@ -1,16 +1,5 @@
-# Tornado Pool [![Build Status](https://github.com/tornadocash/tornado-pool/workflows/build/badge.svg)](https://github.com/tornadocash/tornado-pool/actions)
+# ZK-Invest Contract & Circuits
 
-This an experimental version of tornado.cash that allows to deposit **arbitrary amounts** and make **internal(shielded) transfers**.
-
-Other facts about this version:
-
-1. It uses L2 (xdai). Xdai has a ETH(mainnet)<>WETH(xdai) bridge that will be used under hood.
-2. Contracts will be upgradable by tornado-cash governance! xdai bridge supports transferring messages from L1 to L2 and vise versa, so community can always upgrade tornado-pool to a new version in case of an issue.
-3. Since it's a beta version, deposits are limited by 1ETH. Governance can always increase the limit.
-4. Withdrawal amount from pool to L1 has to be larger than 0.05 ETH to prevent spam attack on the bridge.
-5. The code was [audited](./resources/Zeropool-Tornado.pool-audit.pdf) by Igor Gulamov from Zeropool.
-
-This project was presented on LisCon 2021. [Slides](https://docs.google.com/presentation/d/1CbI6fiWvgwoD_1ahcSR62wD7V4TdSzkdL2RwAeMPagQ/edit#slide=id.gf731d8850e_0_133)
 
 ## Usage
 
@@ -21,30 +10,26 @@ yarn build
 yarn test
 ```
 
-## Deploy
+## Building the circuits
 
-Check config.js for actual values.
+`yarn circuit` downloads the power of tau file and builds the circom circuits. To use a smaller power of tau file (15 or 16), the variables in the build scripts should be replaced, and the merkle tree height parameter should be changed in the scripts (`transaction2.circom`,  `transaction16.circom`), and in the test files (`MERKLE_TREE_HEIGHT` variable). Tornadocash used a powers of tau file of 2^15 maximum constraints, and a merkle tree height of 5. Don't forget to change it back for deployment.
 
-With `salt` = `0x0000000000000000000000000000000000000000000000000000000047941987` addresses must be:
+In the `circuits` directory,  `transaction${x}.circom` implement the template in `transaction.circom` and are the circuits used to generate the proofs for most transactions (deposit, withdraw, invest, cancel investment). The `projectTokenTransfer.circom` circuit is used to generate the proof for needed to accept an investment.
 
-1. `L1Unwrapper` - `0x3F615bA21Bc6Cc5D4a6D798c5950cc5c42937fbd`
-2. `TornadoPool` - `0x0CDD3705aF7979fBe80A64288Ebf8A9Fe1151cE1`
+## Compiling the contracts
 
-Check addresses with current config:
+`yarn compile` compiles the contracts after the circuits are built.
 
-```shell
-yarn compile
-node -e 'require("./src/0_generateAddresses").generateWithLog()'
-```
+In the `contracts` directory, `ZkInvest` in `ZkInvest.sol` is the main contract, which implements the contract in `TornadoPool.sol`. In `/tokens/OwnableERC1155.sol` is the contract that implements the ERC1155 project tokens, it is an ownable contract owned by `ZkInvest`, allowing it to mint tokens to certain addresses.
 
-Deploy L1Unwrapper:
+## Running the tests
 
-```shell
-npx hardhat run scripts/deployL1Unwrapper.js --network mainnet
-```
+`yarn test` runs the MerkleTree test file, as well as the ZK-Invest test file, which simulates an interaction between Alice, a project owner, and Bob, an investor.
 
-Deploy TornadoPool Upgrade:
+## Deploying locally
 
-```shell
-npx hardhat run scripts/deployTornadoUpgrade.js --network xdai
-```
+First, open a terminal window and run `npx hardhat node` to start the local hardhat network.
+
+Then, run `npx hardhat run ./scripts/deployPool_local.sh --network local` to deploy the contracts used in the project, including a Mintable ERC20 Token contract to be used as the main transaction token in the project. The script uses the `PUBLIC_KEY` and the `SECOND_PUBLIC_KEY` environment variables (see `/back/.env.example`), which correspond to the two accounts in the hardhat configuration file (`/back/hardhat.config.js`), that use the `PRIVATE_KEY` and `SECOND_PRIVATE KEY` environment variables for the accounts.
+
+To deploy to a testnet or a mainnet, modify the `token` variable in `/back/deployPool.sh` to be the address of the used token on the corresponding network, then run the above command using the `deployPool.sh` script instead of `deployPool_local.sh`, and using any network instead of `local`. Make sure the chosen network is configured in the hardhat configuration first.
