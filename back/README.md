@@ -1,4 +1,4 @@
-# ZK-Invest Contract & Circuits
+# ZK-Invest Contracts & Circuits
 
 
 ## Usage
